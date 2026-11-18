@@ -1,14 +1,16 @@
-<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V85 Analyzer 2.0</title>
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trav Analyzer 3.0 – V75 och V85</title>
 <style>
 :root{--bg:#f3f6f8;--ink:#172433;--muted:#647487;--line:#dce4eb;--blue:#155d91;--blue2:#e8f1f8;--green:#e8f5ed;--amber:#fff4df}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,sans-serif}header{background:#102b46;color:white;padding:22px 16px}main,header div,footer{max-width:1100px;margin:auto}main{padding:16px}.panel,.race{background:white;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(16,43,70,.035)}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:125px}label{font-size:13px;color:var(--muted)}input,select,textarea{padding:11px;border:1px solid #cbd5df;border-radius:10px;font:inherit;width:100%;background:white;color:var(--ink);min-height:44px}button{background:var(--blue);color:white;border:0;border-radius:10px;padding:12px 15px;font:inherit;font-weight:700;min-height:44px;cursor:pointer}button.alt{background:#e8eef4;color:#17344c}button.del{background:#f8e8e8;color:#8d2222}.horse{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.muted{color:var(--muted)}.small{font-size:13px}h1{margin:0;font-size:clamp(25px,5vw,36px)}h2{font-size:21px;margin:0 0 12px}h3{font-size:17px}.warn{background:var(--amber);border:1px solid #eed6a8;border-radius:10px;padding:12px;margin-bottom:14px}footer{padding:0 16px 22px;color:var(--muted);font-size:12px}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #8bbce0;outline-offset:2px}#topfetchstatus,#atgstatus,#historystatus{background:#f5f8fb;border-radius:10px;padding:10px;line-height:1.5}table{font-size:13px}th,td{padding:6px;border-bottom:1px solid var(--line);text-align:left}details summary{cursor:pointer;padding:8px 0;font-weight:650}
 @media(max-width:600px){header{padding:18px 14px}main{padding:10px}.panel,.race{padding:14px;border-radius:13px}.row{align-items:stretch}.row>.field{min-width:calc(50% - 6px)}button{width:100%}.row button{flex:1 1 100%}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.horse .grid{grid-template-columns:repeat(2,minmax(0,1fr))}input,select,textarea{font-size:16px}h2{font-size:19px}table{min-width:520px}}
+.horse summary{list-style-position:inside;cursor:pointer}.horse details[open] summary{margin-bottom:12px}.horse .horse-brief{display:inline-block;margin-left:8px;font-size:13px;color:var(--muted)}.race-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.status-good{color:#176345}.status-missing{color:#855414}.data-chip{display:inline-block;border-radius:10px;background:#eef3f8;padding:3px 8px;font-size:12px;margin:4px 4px 0 0}#roundoverview .grid>div{padding:10px;border-radius:10px;background:#f5f8fb}
 </style></head><body>
-<header><div><h1>🏇 V85 Analyzer</h1><div class="small" style="opacity:.8">Version 2.0 • mobilanpassad analys</div><div>Form • kusk • skor • bana • väder • utveckling • spelvärde</div></div></header>
+<header><div><h1>🏇 Trav Analyzer</h1><div class="small" style="opacity:.8">Version 3.0 • V75 + V85 • ett balanserat system upp till 300 kr</div><div>Startlista • form • historik • spelvärde</div></div></header>
 <main>
-<div class="panel"><h2>Kom igång – tre enkla steg</h2><div class="row"><button onclick="startAutoFetch()">1. Hämta V85-startlistan automatiskt</button><button class="alt" onclick="fetchAllHorseHistory()">2. Hämta hästarnas historik</button><button class="alt" onclick="save(true);alert('Analysen sparades på den här enheten.')">3. Spara analysen</button></div><p id="topfetchstatus" class="small" role="status" aria-live="polite" style="margin-top:10px">Redo att söka. Starta hämtningen med knappen ovan.</p><p class="small muted">Välj omgångsdatum i ATG-rutan nedan. Programmet söker i ATG:s publika kalender och läser in startlistan. Kontrollera alltid att rätt omgång och alla åtta avdelningar har hämtats. Sena ändringar kan kräva en ny hämtning.</p></div>
+<div class="panel"><h2>Din omgång – ett tryck</h2><div class="row"><button onclick="startAutoFetch()">Hämta omgång och historik</button><button class="alt" onclick="buildBalancedSystem()">Bygg balanserat system</button><button class="alt" onclick="save()">Spara analysen</button></div><p id="topfetchstatus" class="small" role="status" aria-live="polite" style="margin-top:10px">Välj datum längre ned och hämta omgången. Hästhistoriken kontrolleras automatiskt.</p><p class="small muted">Programmet hittar tillgänglig V85- eller V75-omgång, kontrollerar antal avdelningar och använder respektive officiellt radpris. Saknad historik visas som saknad – aldrig som noll starter.</p></div>
 <section class="panel"><h2>Omgång och budget</h2><div class="row">
-<div class="field"><label>Bana</label><input id="track" placeholder="Ex. Solvalla"></div><div class="field"><label>Datum</label><input id="date" type="date"></div><div class="field"><label>Väder / banförhållande</label><input id="weather" placeholder="+2 °C, regn, tung bana"></div><div class="field"><label>Budget (kr)</label><input id="budget" type="number" value="300" min="1"></div><div class="field"><label>Strategi</label><select id="strategy"><option>Försiktig</option><option selected>Balanserad</option><option>Hög risk</option></select></div><div class="field"><label>Radpris (kr)</label><input id="unit" type="number" value="0.50" min="0.01" step="0.01"></div></div>
+<div class="field"><label>Spelform</label><select id="gameType" onchange="onGameTypeChange()"><option value="auto" selected>Automatisk (V75/V85)</option><option value="V85">V85 · 8 avdelningar</option><option value="V75">V75 · 7 avdelningar</option></select></div><div class="field"><label>Bana</label><input id="track" placeholder="Ex. Solvalla"></div><div class="field"><label>Datum</label><input id="date" type="date"></div><div class="field"><label>Väder / banförhållande</label><input id="weather" placeholder="+2 °C, regn, tung bana"></div><div class="field"><label>Budget (kr, max 300)</label><input id="budget" type="number" value="300" min="1" max="300" onchange="enforceBudget()"></div><div class="field"><label>Strategi</label><select id="strategy"><option selected>Balanserad</option></select></div><div class="field"><label>Radpris (kr)</label><input id="unit" type="number" value="0.50" readonly aria-label="Radpris väljs automatiskt efter spelform"></div></div>
 <div class="row" style="margin-top:12px"><button onclick="save()">Spara</button><button class="alt" onclick="load()">Ladda</button><button class="alt" onclick="csv()">Exportera CSV</button><button class="del" onclick="resetAll()">Rensa</button></div></section>
+<section class="panel" id="roundoverview"><h2>Omgångsöversikt</h2><div id="roundstatus" class="small muted">Ingen omgång hämtad ännu.</div><div id="roundcards" class="grid" style="margin-top:10px"></div></section>
 <div id="races"></div>
 
 
@@ -16,10 +18,10 @@
 <h2>Automatisk startlista – ATG</h2>
 <p class="small muted">Sök datum och hämta omgången med ett tryck. Kopplingen använder ATG:s publika men odokumenterade Racinginfo-API. Den kan påverkas av ändringar hos ATG eller webbläsarens nätverksskydd.</p>
 <div class="row">
-<div class="field"><label>V85-datum</label><input id="atgdate" type="date"></div>
-<div class="field"><label>Omgångs-ID (fylls efter kalendersökning)</label><input id="atggameid" placeholder="V85_ÅÅÅÅ-MM-DD_bana_lopp"></div>
+<div class="field"><label>Omgångsdatum</label><input id="atgdate" type="date"></div>
+<div class="field"><label>Omgångs-ID (fylls efter kalendersökning)</label><input id="atggameid" placeholder="V75_... eller V85_..."></div>
 </div>
-<div class="row" style="margin-top:10px"><button onclick="autoFetchV85()">Sök och hämta automatiskt</button><button class="alt" onclick="fetchAtgCalendar()">Visa tillgängliga omgångar</button><button class="alt" onclick="fetchAtgGame()">Hämta valt omgångs-ID</button></div>
+<div class="row" style="margin-top:10px"><button onclick="startAutoFetch()">Sök och hämta automatiskt</button><button class="alt" onclick="fetchAtgCalendar()">Visa tillgängliga omgångar</button><button class="alt" onclick="fetchAtgGame()">Hämta valt omgångs-ID</button></div>
 <div id="atgstatus" class="small muted" style="margin-top:10px">Ingen automatisk hämtning gjord ännu.</div>
 <div id="atgchoices" style="margin-top:8px"></div>
 </section>
@@ -30,7 +32,7 @@
 <div class="field"><label>Importera CSV från startlista</label><input id="csvfile" type="file" accept=".csv,text/csv"></div>
 <div class="field"><label>Importera JSON</label><input id="jsonfile" type="file" accept=".json,application/json"></div>
 </div>
-<div class="field" style="margin-top:10px"><label>Klistra in JSON (åtta avdelningar eller lista med hästar)</label><textarea id="jsonpaste" rows="3" placeholder='Exempel: [{"avd":1,"number":1,"name":"Hästnamn","driver":"Kusk","streak":25,"shoes":"barfota"}]'></textarea></div>
+<div class="field" style="margin-top:10px"><label>Klistra in JSON (sju eller åtta avdelningar)</label><textarea id="jsonpaste" rows="3" placeholder='Exempel: [{"avd":1,"number":1,"name":"Hästnamn","driver":"Kusk","streak":25,"shoes":"barfota"}]'></textarea></div>
 <div class="row" style="margin-top:10px"><button onclick="importJSON()">Läs in JSON</button><button class="alt" onclick="downloadTemplate()">Hämta CSV-mall</button></div>
 <h3 style="margin-top:18px">Datakällor att hämta underlag från</h3>
 <div class="grid">
@@ -47,10 +49,10 @@
 <p class="small muted" id="importstatus">Ingen import gjord ännu.</p>
 </section>
 <section class="panel" id="historyPanel">
-<h2>Hästens kompletta tävlingshistorik – Sverige och utlandet</h2>
-<p class="small muted">Hämta historikrader via ATG:s utökade loppdata när den finns tillgänglig. Hästar kopplas i första hand med ID, därefter med startnummer och unikt namn i rätt avdelning. Programmet redovisar även när ATG inte lämnar historikrader. Komplettera vid behov med CSV/JSON.</p>
+<h2>Hästarnas historik – Sverige och utlandet</h2>
+<p class="small muted">Historiken undersöks automatiskt när startlistan hämtas: först i startlistans egna data, därefter i ATG:s utökade loppdata när det behövs. Endast faktiska historikrader används. Programmet visar när uppgifter saknas. Komplettera vid behov med JSON.</p>
 <div class="row">
-<button onclick="fetchAllHorseHistory()">Hämta historik för alla 8 avdelningar</button>
+<button onclick="fetchAllHorseHistory()">Försök uppdatera historiken igen</button>
 <button class="alt" onclick="downloadHistoryCSV()">Exportera all hästhistorik (CSV)</button>
 </div>
 <div class="field" style="margin-top:10px"><label>Kompletterande historik – klistra in JSON</label><textarea id="historyJSON" rows="4" placeholder='Exempel: [{"horseId":"12345","horseName":"Hästnamn","starts":[{"date":"2025-05-10","country":"SE","track":"Solvalla","distance":2140,"startMethod":"auto","place":2,"kmTime":"1.13,4","driver":"Kusk","galloped":false}]}]'></textarea></div>
@@ -60,20 +62,49 @@
 <p class="small muted">Landjämförelsen visar separata resultat för Sverige, Norge, Danmark, Finland, Frankrike och andra länder när landkoder finns. Historikjusteringen är en försiktig, experimentell tumregel – inte en validerad vinstprognos. Den påverkar rankingen lite och ska utvärderas mot kommande resultat. Källbegränsning: ATG:s utökade historikrader är en praktisk startpunkt men API:t är odokumenterat och kan ändras. Om källan anger att fler poster finns, eller en utländsk start saknas, visas historiken som ofullständig tills den kompletterats. Inga saknade starter räknas som nollresultat.</p>
 </section>
 <section class="panel"><h2>Systembyggare</h2><p class="small muted">Markera hästar i varje avdelning. Kostnad = antal rader × radpris.</p><div id="system"></div><div class="row"><button onclick="calc()">Beräkna system</button><button class="alt" onclick="buildBalancedSystem()">Bygg balanserat system inom budget</button><button class="alt" onclick="topTwo()">Markera två högst rankade per avdelning</button></div></section>
-<section class="panel"><h2>Viktning i analysen</h2><div class="grid"><div><b>Form 25 %</b><div class="small muted">Senaste prestationer.</div></div><div><b>Hästutveckling 15 %</b><div class="small muted">Kapacitet och trend.</div></div><div><b>Kusk 15 %</b><div class="small muted">Kuskform och samspel.</div></div><div><b>Bana/väder 15 %</b><div class="small muted">Passar dagens förhållanden?</div></div><div><b>Spår/loppbild 15 %</b><div class="small muted">Startspår, distans och position.</div></div><div><b>Skor/vagn 10 %</b><div class="small muted">Balans och utrustningsändringar.</div></div><div><b>Stabilitet 5 %</b><div class="small muted">Jämnhet och galopprisk.</div></div></div><p class="small muted">Betygen 0–10 är manuella bedömningar. Modellens vinstchans är en jämförande uppskattning inom avdelningen, inte en garanti.</p></section>
-</main><footer>V85 Analyzer • Startlistor och analys sparas lokalt i webbläsaren på den enhet där filen öppnas. Spela ansvarsfullt och håll dig till din budget.</footer>
+<section class="panel"><h2>Viktning i analysen</h2><div class="grid"><div><b>Form 25 %</b><div class="small muted">Senaste prestationer.</div></div><div><b>Hästutveckling 15 %</b><div class="small muted">Kapacitet och trend.</div></div><div><b>Kusk 15 %</b><div class="small muted">Kuskform och samspel.</div></div><div><b>Bana/väder 15 %</b><div class="small muted">Passar dagens förhållanden?</div></div><div><b>Spår/loppbild 15 %</b><div class="small muted">Startspår, distans och position.</div></div><div><b>Skor/vagn 10 %</b><div class="small muted">Balans och utrustningsändringar.</div></div><div><b>Stabilitet 5 %</b><div class="small muted">Jämnhet och galopprisk.</div></div></div><p class="small muted">Betygen 0–10 är manuella tills verifierad data finns. Rankingandelarna är preliminära modellvärden och inte vetenskapligt kalibrerade vinstchanser. Uppgifter som saknas ska inte tolkas som säkra spelfördelar.</p></section>
+</main><footer>Trav Analyzer 3.0 • Data sparas lokalt i webbläsaren. Kostnad och strykningar måste kontrolleras mot ATG innan spel. Spela ansvarsfullt och håll dig inom 300 kr.</footer>
 <script>
-const N=8,keys=[["form",25],["development",15],["driver",15],["conditions",15],["position",15],["equipment",10],["reliability",5]];
+const GAME_CONFIG={V85:{legs:8,unit:.50},V75:{legs:7,unit:.60}};
+const HISTORY_CACHE_KEY="travAnalyzer_history_v1",SAVE_KEY="travAnalyzer_round_v3";
+const keys=[["form",25],["development",15],["driver",15],["conditions",15],["position",15],["equipment",10],["reliability",5]];
+let gameType="V85",N=GAME_CONFIG.V85.legs;
 let races=Array.from({length:N},()=>({horses:[]}));
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function preferredGameType(date){return String(date||"")>="2026-11-28"?"V75":"V85";}
+function enforceBudget(){const raw=Number($("budget").value);const value=Number.isFinite(raw)&&raw>0?Math.min(raw,300):300;$("budget").value=value;return value;}
+function configureGame(type,reset=false){
+ if(!GAME_CONFIG[type])throw new Error("Okänd spelform: "+type);
+ const previous=races;gameType=type;N=GAME_CONFIG[type].legs;
+ races=reset?Array.from({length:N},()=>({horses:[]})):Array.from({length:N},(_,i)=>previous[i]||{horses:[]});
+ $("unit").value=GAME_CONFIG[type].unit.toFixed(2);
+}
+function onGameTypeChange(){
+ const selected=$("gameType").value;
+ const next=selected==="auto"?preferredGameType($("atgdate").value):selected;
+ if(next!==gameType&&races.some(r=>r.horses.length)&&!confirm("Byta spelform? Omgångens startlista och valda hästar rensas, men sparad hästhistorik behålls.")){$("gameType").value=gameType;return;}
+ if(next!==gameType)configureGame(next,true);
+ render();renderHistoryOverview();save(true);
+}
+function historyCache(){try{return JSON.parse(localStorage.getItem(HISTORY_CACHE_KEY)||"{}")||{};}catch{return {};}}
+function mergeCachedHistory(h,cache){
+ const saved=h.horseId&&cache[String(h.horseId)];
+ if(saved&&Array.isArray(saved.history)&&saved.history.length){h.history=saved.history;h.historyHasMore=!!saved.historyHasMore;}
+ return h;
+}
+function renderRoundOverview(){
+ const count=races.reduce((n,r)=>n+r.horses.length,0);
+ $("roundstatus").textContent=`${gameType} · ${N} avdelningar · ${GAME_CONFIG[gameType].unit.toFixed(2).replace(".",",")} kr per rad · ${count} hästar${$("date").value?" · "+$("date").value:""}.`;
+ $("roundcards").innerHTML=count?races.map((r,i)=>{const lead=rank(i)[0],has=r.horses.filter(h=>historyStats(h).count).length;return `<div><b>Avd ${i+1}</b><div class="small muted">${r.horses.length} hästar · ${has} med historik</div><div class="small">${lead?esc(lead.num)+" "+esc(lead.name):"Startlista saknas"}</div></div>`;}).join(""):"";
+}
 
 const normName=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
 function normHistoryRecord(x){
  const race=x.race||x.event||{},track=x.track||race.track||{},start=x.start||{},driver=x.driver||start.driver||x.result?.driver||{};
  const result=x.result||x.results||{};const placeRaw=x.place??x.finishPosition??result.place??result.finishPosition??null;const km=x.kmTime??result.kmTime??result.time??x.time??"";
  const kmText=typeof km==="object"?[km.minutes,km.seconds,km.tenths].filter(v=>v!==undefined&&v!==null).join(":"):km;
- return {date:x.date||race.date||"",country:x.country||x.countryCode||race.countryCode||track.countryCode||track.country||"",track:typeof track==="string"?track:(track.name||x.trackName||race.trackName||""),distance:Number(x.distance||start.distance||race.distance||0)||"",startMethod:x.startMethod||race.startMethod||"",place:placeRaw===undefined?null:placeRaw,finishOrder:x.finishOrder??result.finishOrder??null,kmTime:String(kmText||""),odds:x.odds??x.finalOdds??"",driver:x.driverName||[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||x.driver||"",trainer:x.trainerName||"",galloped:!!(x.galloped||x.result?.galloped),disqualified:!!(x.disqualified||x.result?.disqualified),scratched:!!(x.scratched||x.result?.scratched),prizeMoney:x.prizeMoney??x.result?.prizeMoney??null,source:x.source||"Importerad",raceId:x.raceId||race.id||""};
+ return {date:x.date||x.startDate||race.date||"",country:x.country||x.countryCode||race.countryCode||track.countryCode||track.country||"",track:typeof track==="string"?track:(track.name||x.trackName||race.trackName||""),distance:Number(x.distance||start.distance||race.distance||0)||"",startMethod:x.startMethod||race.startMethod||"",place:placeRaw===undefined?null:placeRaw,finishOrder:x.finishOrder??result.finishOrder??null,kmTime:String(kmText||""),odds:x.odds??x.finalOdds??"",driver:x.driverName||[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||x.driver||"",trainer:x.trainerName||"",galloped:!!(x.galloped||x.result?.galloped),disqualified:!!(x.disqualified||x.result?.disqualified),scratched:!!(x.scratched||x.result?.scratched),prizeMoney:x.prizeMoney??x.result?.prizeMoney??null,source:x.source||"Importerad",raceId:x.raceId||race.id||""};
 }
 function countryInfo(raw){const v=String(raw??"").trim().toUpperCase();const aliases={SE:"Sverige",SWE:"Sverige",SWEDEN:"Sverige",SV:"Sverige",NO:"Norge",NOR:"Norge",NORWAY:"Norge",DK:"Danmark",DEN:"Danmark",DENMARK:"Danmark",FI:"Finland",FIN:"Finland",FINLAND:"Finland",FR:"Frankrike",FRA:"Frankrike",FRANCE:"Frankrike",DE:"Tyskland",GER:"Tyskland",GERMANY:"Tyskland",IT:"Italien",ITA:"Italien",ITALY:"Italien",US:"USA",USA:"USA",UNITEDSTATES:"USA",BE:"Belgien",BEL:"Belgien",BELGIUM:"Belgien",NL:"Nederländerna",NED:"Nederländerna",NETHERLANDS:"Nederländerna"};const key=v.replace(/[^A-Z]/g,"");return aliases[key]||(v?String(raw).trim():"Okänt land");}
 function countryStats(h){const valid=(h.history||[]).filter(x=>!x.scratched&&(x.place!==null&&x.place!==undefined||x.finishOrder!==null&&x.finishOrder!==undefined||x.galloped||x.disqualified));const groups={};valid.forEach(x=>{const c=countryInfo(x.country);(groups[c]??=[]).push(x)});return Object.entries(groups).map(([country,a])=>{const completed=a.filter(x=>x.place!==null&&x.place!==undefined);const wins=completed.filter(x=>Number(x.place)===1).length;const top3=completed.filter(x=>Number(x.place)>=1&&Number(x.place)<=3).length;const errors=a.filter(x=>x.galloped||x.disqualified).length;const avg=completed.length?completed.reduce((sum,x)=>sum+Number(x.place),0)/completed.length:null;return {country,count:a.length,completed:completed.length,wins,top3,errors,winPct:completed.length?wins/completed.length*100:null,top3Pct:completed.length?top3/completed.length*100:null,errorPct:a.length?errors/a.length*100:null,avgPlace:avg};}).sort((a,b)=>b.count-a.count);}
@@ -82,17 +113,17 @@ function historyStats(h){const a=Array.isArray(h.history)?h.history.filter(x=>!x
 function historyBonus(h){const st=historyStats(h);if(!st.count)return 0;let b=0;if(st.recentScore!==null)b+=(st.recentScore-5)*.10;b+=((st.winPct||0)-12)*.012;b+=((st.top3Pct||0)-35)*.004;if(st.distanceTop3Pct!==null)b+=((st.distanceTop3Pct||0)-35)*.003;b-=(st.gallopPct||0)*.008;return Math.max(-1,Math.min(1,b));}
 function historyLabel(h){const st=historyStats(h);if(!st.count)return '<span class="small muted">Ingen importerad tävlingshistorik</span>';return `<span class="small">Historik: <b>${st.count} starter</b> · ${st.wins} segrar · ${st.top3} topp-3 · ${st.foreign} utländska · ${st.gallops} galopp/DQ${st.distanceRuns?` · ${st.distanceTop3}/${st.distanceRuns} topp-3 nära dagens distans`:``}${st.hasMore?' · <b>fler poster kan finnas</b>':''}</span>`;}
 
-function score(h){return keys.reduce((a,[k,w])=>a+Number(h[k]??5)*w/100,0)+historyBonus(h)}
-function rank(i){let hs=races[i].horses,v=hs.map(h=>Math.exp(score(h)/2)),t=v.reduce((a,b)=>a+b,0)||1;return hs.map((h,j)=>({...h,j,s:score(h),p:v[j]/t*100,edge:v[j]/t*100-Number(h.streak||0)})).sort((a,b)=>b.s-a.s)}
-function render(){ $("races").innerHTML=races.map((r,i)=>`<section class="race"><div class="row" style="justify-content:space-between"><h2>Avdelning ${i+1}</h2><button onclick="add(${i})">+ Lägg till häst</button></div>${r.horses.length?r.horses.map((h,j)=>horse(i,j,h)).join(""):'<p class="muted small">Inga hästar tillagda ännu.</p>'}</section>`).join("");}
-function horse(i,j,h){let fields=[["form","Form"],["development","Utveckling"],["driver","Kusk"],["conditions","Bana/väder"],["position","Spår/loppbild"],["equipment","Skor/vagn"],["reliability","Stabilitet"]];return `<div class="horse"><div class="row"><div class="field"><label>Nr</label><input type="number" value="${esc(h.num??j+1)}" onchange="set(${i},${j},'num',this.value)"></div><div class="field"><label>Häst</label><input value="${esc(h.name)}" placeholder="Hästens namn" onchange="set(${i},${j},'name',this.value)"></div><div class="field"><label>Kusk</label><input value="${esc(h.driverName)}" placeholder="Kusk" onchange="set(${i},${j},'driverName',this.value)"></div><div class="field"><label>Streck %</label><input type="number" min="0" max="100" value="${esc(h.streak??'')}" onchange="set(${i},${j},'streak',this.value)"></div><div class="field"><label>Odds</label><input type="number" min="1" step=".1" value="${esc(h.odds??'')}" onchange="set(${i},${j},'odds',this.value)"></div></div><div class="grid" style="margin-top:8px">${fields.map(([k,l])=>`<div class="field"><label>${l} (0–10)</label><input type="number" min="0" max="10" value="${esc(h[k]??5)}" onchange="set(${i},${j},'${k}',this.value)"></div>`).join("")}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Skoinfo</label><input value="${esc(h.shoes)}" placeholder="Barfota runt om..." onchange="set(${i},${j},'shoes',this.value)"></div><div class="field"><label>Vagn</label><input value="${esc(h.cart)}" placeholder="Bike / vanlig..." onchange="set(${i},${j},'cart',this.value)"></div><div class="field"><label>Tidigare lopp / kommentar</label><input value="${esc(h.notes)}" placeholder="Placering, tid, galopp..." onchange="set(${i},${j},'notes',this.value)"></div></div><div style="margin-top:8px">${historyLabel(h)} ${historyStats(h).count?`<details open><summary class="small">Jämför prestation per land och visa tävlingshistorik (${historyStats(h).count} starter)</summary>${countryProfileHTML(h)}<div class="small" style="overflow:auto"><table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr><th>Datum</th><th>Land</th><th>Bana</th><th>Distans</th><th>Plac.</th><th>Tid</th><th>Kusk</th></tr></thead><tbody>${[...h.history].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(countryInfo(x.country))}</td><td>${esc(x.track)}</td><td>${esc(x.distance)}</td><td>${esc(x.galloped?'Galopp':x.disqualified?'DQ':x.place??'—')}</td><td>${esc(x.kmTime)}</td><td>${esc(x.driver)}</td></tr>`).join('')}</tbody></table></div></details>`:''}</div><div class="row" style="justify-content:space-between;margin-top:8px"><span class="small">Betyg: <b>${score(h).toFixed(1)}/10</b> ${historyStats(h).count?`(inkl. historikjustering ${historyBonus(h)>=0?'+':''}${historyBonus(h).toFixed(2)})`:''}</span><label><input type="checkbox" style="width:auto" ${h.selected?'checked':''} onchange="set(${i},${j},'selected',this.checked)"> Ta med</label><button class="del" onclick="removeH(${i},${j})">Ta bort</button></div></div>`}
+function score(h){const base=keys.reduce((a,[k,w])=>{const present=h[k]!==null&&h[k]!==undefined&&String(h[k]).trim()!=="",raw=Number(h[k]);return a+(present&&Number.isFinite(raw)?Math.max(0,Math.min(10,raw)):5)*w/100;},0);return Math.max(0,Math.min(10,base+historyBonus(h)));}
+function rank(i){const hs=races[i]?.horses||[],weights=hs.map(h=>Math.exp(score(h)/2)),total=weights.reduce((a,b)=>a+b,0)||1;return hs.map((h,j)=>{const p=weights[j]/total*100,hasStreak=h.streak!==undefined&&h.streak!==null&&String(h.streak).trim()!==""&&Number.isFinite(Number(h.streak));return {...h,j,s:score(h),p,edge:hasStreak?p-Number(h.streak):null};}).sort((a,b)=>b.s-a.s);}
+function render(){const expanded=new Set(Array.from($("races").querySelectorAll("details.horse-details[open]")).map(x=>x.dataset.key));const loaded=races.some(r=>r.horses.length);$("races").innerHTML=loaded?races.map((r,i)=>`<section class="race"><div class="row" style="justify-content:space-between"><h2>Avdelning ${i+1}</h2><button onclick="add(${i})">+ Lägg till häst</button></div>${r.horses.length?r.horses.map((h,j)=>horse(i,j,h)).join(""):'<p class="muted small">Inga hästar tillagda ännu.</p>'}</section>`).join(""):"";Array.from($("races").querySelectorAll("details.horse-details")).forEach(x=>{if(expanded.has(x.dataset.key))x.open=true;});renderRoundOverview();}
+function horse(i,j,h){let fields=[["form","Form"],["development","Utveckling"],["driver","Kusk"],["conditions","Bana/väder"],["position","Spår/loppbild"],["equipment","Skor/vagn"],["reliability","Stabilitet"]];return `<div class="horse"><div class="race-head"><div><b>${esc(h.num??j+1)} ${esc(h.name||"Namnlös")}</b><div class="small muted">${esc(h.driverName||"Kusk okänd")} · Betyg ${score(h).toFixed(1)} / 10 · ${historyStats(h).count?historyStats(h).count+" historikrader":"historik saknas"}</div></div><label><input type="checkbox" style="width:auto" ${h.selected?"checked":""} onchange="set(${i},${j},'selected',this.checked)"> Ta med</label></div><details class="horse-details" data-key="${i}-${j}"><summary>Visa uppgifter och ändra betyg</summary><div class="row"><div class="field"><label>Nr</label><input type="number" value="${esc(h.num??j+1)}" onchange="set(${i},${j},'num',this.value)"></div><div class="field"><label>Häst</label><input value="${esc(h.name)}" placeholder="Hästens namn" onchange="set(${i},${j},'name',this.value)"></div><div class="field"><label>Kusk</label><input value="${esc(h.driverName)}" placeholder="Kusk" onchange="set(${i},${j},'driverName',this.value)"></div><div class="field"><label>Streck %</label><input type="number" min="0" max="100" value="${esc(h.streak??'')}" onchange="set(${i},${j},'streak',this.value)"></div><div class="field"><label>Odds</label><input type="number" min="1" step=".1" value="${esc(h.odds??'')}" onchange="set(${i},${j},'odds',this.value)"></div></div><div class="grid" style="margin-top:8px">${fields.map(([k,l])=>`<div class="field"><label>${l} (0–10)</label><input type="number" min="0" max="10" value="${esc(h[k]??5)}" onchange="set(${i},${j},'${k}',this.value)"></div>`).join("")}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Skoinfo</label><input value="${esc(h.shoes)}" placeholder="Barfota runt om..." onchange="set(${i},${j},'shoes',this.value)"></div><div class="field"><label>Vagn</label><input value="${esc(h.cart)}" placeholder="Bike / vanlig..." onchange="set(${i},${j},'cart',this.value)"></div><div class="field"><label>Tidigare lopp / kommentar</label><input value="${esc(h.notes)}" placeholder="Placering, tid, galopp..." onchange="set(${i},${j},'notes',this.value)"></div></div><div style="margin-top:8px">${historyLabel(h)} ${historyStats(h).count?`<details open><summary class="small">Jämför prestation per land och visa tävlingshistorik (${historyStats(h).count} starter)</summary>${countryProfileHTML(h)}<div class="small" style="overflow:auto"><table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr><th>Datum</th><th>Land</th><th>Bana</th><th>Distans</th><th>Plac.</th><th>Tid</th><th>Kusk</th></tr></thead><tbody>${[...h.history].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(countryInfo(x.country))}</td><td>${esc(x.track)}</td><td>${esc(x.distance)}</td><td>${esc(x.galloped?'Galopp':x.disqualified?'DQ':x.place??'—')}</td><td>${esc(x.kmTime)}</td><td>${esc(x.driver)}</td></tr>`).join('')}</tbody></table></div></details>`:''}</div><div class="row" style="justify-content:space-between;margin-top:8px"><span class="small">Betyg: <b>${score(h).toFixed(1)}/10</b> ${historyStats(h).count?`(inkl. historikjustering ${historyBonus(h)>=0?'+':''}${historyBonus(h).toFixed(2)})`:''}</span><label><input type="checkbox" style="width:auto" ${h.selected?'checked':''} onchange="set(${i},${j},'selected',this.checked)"> Ta med</label><button class="del" onclick="removeH(${i},${j})">Ta bort</button></div></details></div>`}
 function add(i){races[i].horses.push({num:races[i].horses.length+1,form:5,development:5,driver:5,conditions:5,position:5,equipment:5,reliability:5});render();save(true)}
-function set(i,j,k,v){races[i].horses[j][k]=v;save(true)}
+function set(i,j,k,v){const h=races[i]?.horses[j];if(!h)return;h[k]=v;render();renderHistoryOverview();if(races.every(r=>r.horses.some(x=>x.selected)))calc();save(true);}
 function removeH(i,j){races[i].horses.splice(j,1);render();save(true)}
 function topTwo(){races.forEach((r,i)=>{let top=rank(i).slice(0,2).map(x=>x.j);r.horses.forEach((h,j)=>h.selected=top.includes(j))});render();calc()}
-function calc(){let counts=races.map(r=>r.horses.filter(h=>h.selected).length),missing=counts.indexOf(0);if(missing>=0){$("system").innerHTML=`<p class="warn">Välj minst en häst i avdelning ${missing+1}.</p>`;return}let rows=counts.reduce((a,b)=>a*b,1),cost=rows*(Number($("unit").value)||.5),budget=Number($("budget").value)||0;$("system").innerHTML=`<div class="grid"><div><label>Valda hästar per avdelning</label><b>${counts.join(" × ")}</b></div><div><label>Antal rader</label><b>${rows.toLocaleString("sv-SE")}</b></div><div><label>Beräknad kostnad</label><b>${cost.toLocaleString("sv-SE",{maximumFractionDigits:2})} kr</b></div><div><label>Budget</label><b>${budget} kr</b></div></div><p class="${cost>budget?'warn':'small muted'}">${cost>budget?'Systemet överskrider budgeten. Minska antalet hästar.':'Systemet ryms inom budgeten.'}</p><h3>Ranking per avdelning</h3>${races.map((r,i)=>`<p><b>Avd ${i+1}:</b> ${rank(i).map(h=>`${esc(h.num)} ${esc(h.name||'Namnlös')} (${h.s.toFixed(1)}/10, modell ${h.p.toFixed(0)} %, spelvärde ${h.edge>=0?'+':''}${h.edge.toFixed(1)} pp)`).join(" · ")}</p>`).join("")}`}
+function calc(){let counts=races.map(r=>r.horses.filter(h=>h.selected).length),missing=counts.indexOf(0);if(missing>=0){$("system").innerHTML=`<p class="warn">Välj minst en häst i avdelning ${missing+1}.</p>`;return}let rows=counts.reduce((a,b)=>a*b,1),cost=rows*(GAME_CONFIG[gameType].unit),budget=enforceBudget();$("system").innerHTML=`<div class="grid"><div><label>Valda hästar per avdelning</label><b>${counts.join(" × ")}</b></div><div><label>Antal rader</label><b>${rows.toLocaleString("sv-SE")}</b></div><div><label>Beräknad kostnad</label><b>${cost.toLocaleString("sv-SE",{maximumFractionDigits:2})} kr</b></div><div><label>Budget</label><b>${budget} kr</b></div></div><p class="${cost>budget?'warn':'small muted'}">${cost>budget?'Systemet överskrider budgeten. Minska antalet hästar.':'Systemet ryms inom budgeten.'}</p><h3>Ranking per avdelning</h3>${races.map((r,i)=>`<p><b>Avd ${i+1}:</b> ${rank(i).map(h=>`${esc(h.num)} ${esc(h.name||'Namnlös')} (${h.s.toFixed(1)}/10, preliminär rankingandel ${h.p.toFixed(0)} %, ${Number.isFinite(h.edge)?`skillnad mot streck ${h.edge>=0?"+":""}${h.edge.toFixed(1)} pp`:"streckuppgift saknas"})`).join(" · ")}</p>`).join("")}`}
 function buildBalancedSystem(){
- const budget=Math.max(0,Number($("budget").value)||300),unit=Math.max(.01,Number($("unit").value)||.5),maxRows=Math.floor(budget/unit);
+ const budget=enforceBudget(),unit=GAME_CONFIG[gameType].unit,maxRows=Math.floor((budget+1e-9)/unit);
  if(races.some(r=>!r.horses.length)){$("system").innerHTML='<p class="warn">Hämta startlistan först så att alla avdelningar har hästar.</p>';return;}
  races.forEach(r=>r.horses.forEach(h=>h.selected=false));
  // Start with one top-ranked horse per leg, then expand the most valuable uncovered choice while budget allows.
@@ -106,7 +137,7 @@ function buildBalancedSystem(){
    candidates.forEach((x,pos)=>{
     const next=product()/Math.max(1,selected)*(selected+1);
     if(next>maxRows)return;
-    const value=(x.p/100)*(1+(Number(x.edge)||0)/100)/(1+pos*.18);
+     const value=(x.p/100)*(1+(Number.isFinite(x.edge)?x.edge:0)/100)/(1+pos*.18);
     if(!choice||value>choice.value)choice={i,j:x.j,value};
    });
   });
@@ -116,11 +147,38 @@ function buildBalancedSystem(){
  render();calc();save(true);
  const rows=product(),cost=rows*unit;
  $("system").insertAdjacentHTML("afterbegin",`<p class="small" style="background:#e8f5ed;padding:10px;border-radius:9px">Balanserat förslag skapat: ${rows.toLocaleString('sv-SE')} rader, ${cost.toLocaleString('sv-SE',{maximumFractionDigits:2})} kr. Kontrollera alltid hästar, strykningar och sena ändringar.</p>`);
+ const all=races.flatMap(r=>r.horses),missingHistory=all.filter(h=>!historyStats(h).count).length;
+ if(missingHistory)$("system").insertAdjacentHTML("afterbegin",`<p class="warn">Datavarning: ${missingHistory} av ${all.length} hästar saknar verifierade historikrader. Betygen 5,0 är då neutrala utgångsvärden. Systemet är preliminärt, inte ett löfte om spelvärde.</p>`);
 }
-function save(silent=false){localStorage.setItem("V85analyzer",JSON.stringify({races,track:$("track").value,date:$("date").value,weather:$("weather").value,budget:$("budget").value,unit:$("unit").value,strategy:$("strategy").value,gameId:$("atggameid")?.value||"",atgGame:window._atgGame||null}));if(!silent)alert("Omgången sparad i webbläsaren.")}
-function load(){let x=localStorage.getItem("V85analyzer");if(!x){alert("Ingen sparad omgång hittades.");return}let o=JSON.parse(x);if(o.atgGame)window._atgGame=o.atgGame;if(o.gameId&&$("atggameid"))$("atggameid").value=o.gameId;races=o.races.map(r=>({...r,horses:(r.horses||[]).map(h=>({...h,history:Array.isArray(h.history)?h.history:[]}))}));["track","date","weather","budget","unit","strategy"].forEach(k=>$(k).value=o[k]??(k==="strategy"?"Balanserad":""));render()}
-function resetAll(){if(confirm("Rensa hela omgången?")){races=Array.from({length:N},()=>({horses:[]}));render();$("system").innerHTML=""}}
-function csv(){let rows=[["Avdelning","Nr","Häst","Kusk","Streck","Odds","Betyg","Form","Utveckling","Kusk","Bana/väder","Spår","Skor/vagn","Stabilitet","Skor","Vagn","Kommentar","Historik starter","Utländska starter","Historik segrar","Historik topp 3"]];races.forEach((r,i)=>r.horses.forEach(h=>rows.push([i+1,h.num,h.name,h.driverName,h.streak,h.odds,score(h),h.form,h.development,h.driver,h.conditions,h.position,h.equipment,h.reliability,h.shoes,h.cart,h.notes,historyStats(h).count,historyStats(h).foreign,historyStats(h).wins,historyStats(h).top3])));let text=rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(";")).join("\n");let a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+text],{type:"text/csv;charset=utf-8"}));a.download="V85-analys.csv";a.click();URL.revokeObjectURL(a.href)}
+function save(silent=false){
+ try{
+  const payload={version:3,gameType,gamePreference:$("gameType").value,races,track:$("track").value,date:$("date").value,weather:$("weather").value,budget:enforceBudget(),unit:GAME_CONFIG[gameType].unit,strategy:"Balanserad",gameId:$("atggameid")?.value||"",atgGame:window._atgGame||null,lastUpdated:window._lastUpdated||null};
+  localStorage.setItem(SAVE_KEY,JSON.stringify(payload));
+  const cache=historyCache();
+  for(const h of races.flatMap(r=>r.horses)){if(h.horseId&&Array.isArray(h.history)&&h.history.length)cache[String(h.horseId)]={history:h.history,historyHasMore:!!h.historyHasMore,updatedAt:new Date().toISOString()};}
+  localStorage.setItem(HISTORY_CACHE_KEY,JSON.stringify(cache));
+  if(!silent)alert("Analysen sparad på den här enheten.");
+ }catch(e){$("topfetchstatus").textContent="Varning: det gick inte att spara lokalt ("+e.message+"). Exportera CSV som reserv.";}
+}
+function load(silent=false){
+ const raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem("V85analyzer");
+ if(!raw){if(!silent)alert("Ingen sparad omgång hittades.");return;}
+ try{
+  const o=JSON.parse(raw),type=GAME_CONFIG[o.gameType]?o.gameType:(o.races?.length===7?"V75":"V85");
+  configureGame(type,true);$("gameType").value=o.gamePreference||type;
+  if(o.atgGame)window._atgGame=o.atgGame;
+  if(o.gameId){$("atggameid").value=o.gameId;window._currentGameId=o.gameId;}
+  races=Array.from({length:N},(_,i)=>{const r=o.races?.[i]||{horses:[]};return {...r,horses:(r.horses||[]).map(h=>mergeCachedHistory({...h,history:Array.isArray(h.history)?h.history:[]},historyCache()))};});
+  for(const k of ["track","date","weather","budget"])$(k).value=o[k]??(k==="budget"?300:"");
+  if(o.date)$("atgdate").value=o.date;
+  $("strategy").value="Balanserad";enforceBudget();window._lastUpdated=o.lastUpdated||null;
+  render();renderHistoryOverview();
+  if(races.every(r=>r.horses.some(h=>h.selected)))calc();
+  if(!silent)alert("Sparad omgång inläst.");
+ }catch(e){if(!silent)alert("Kunde inte läsa sparad omgång: "+e.message);}
+}
+function resetAll(){if(confirm("Rensa den aktuella omgången? Hästarnas historikcache behålls.")){races=Array.from({length:N},()=>({horses:[]}));window._atgGame=null;localStorage.removeItem(SAVE_KEY);render();renderHistoryOverview();$("system").innerHTML="";$("atgstatus").textContent="Omgången rensad.";}}
+function csv(){let rows=[["Avdelning","Nr","Häst","Kusk","Streck","Odds","Betyg","Form","Utveckling","Kusk","Bana/väder","Spår","Skor/vagn","Stabilitet","Skor","Vagn","Kommentar","Historik starter","Utländska starter","Historik segrar","Historik topp 3"]];races.forEach((r,i)=>r.horses.forEach(h=>rows.push([i+1,h.num,h.name,h.driverName,h.streak,h.odds,score(h),h.form,h.development,h.driver,h.conditions,h.position,h.equipment,h.reliability,h.shoes,h.cart,h.notes,historyStats(h).count,historyStats(h).foreign,historyStats(h).wins,historyStats(h).top3])));let text=rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(";")).join("\n");let a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+text],{type:"text/csv;charset=utf-8"}));a.download=gameType+"-analys.csv";a.click();URL.revokeObjectURL(a.href)}
 
 function importJSON(){
  try{
@@ -129,11 +187,11 @@ function importJSON(){
   if(!Array.isArray(items))throw new Error("JSON måste vara en lista med hästar.");
   let added=0;
   items.forEach(x=>{
-   let avd=Number(x.avd||x.leg||x.race||1);if(avd<1||avd>8)return;
+    let avd=Number(x.avd||x.leg||x.race||1);if(avd<1||avd>N)return;
    let h={num:x.number||x.num||x.startNumber||"",name:x.name||x.horse||"",driverName:x.driver||x.driverName||"",streak:x.streak??x.percent??"",odds:x.odds??"",shoes:x.shoes||"",cart:x.cart||x.wagon||"",notes:x.notes||x.comment||"",form:Number(x.form??5),development:Number(x.development??5),driver:Number(x.driverScore??5),conditions:Number(x.conditions??5),position:Number(x.position??5),equipment:Number(x.equipment??5),reliability:Number(x.reliability??5)};
    races[avd-1].horses.push(h);added++;
   });
-  render();$("importstatus").textContent=added+" hästar importerades. Kontrollera avdelning, nummer, strykningar och utrustningsuppgifter.";
+  render();renderHistoryOverview();save(true);$("importstatus").textContent=added+" hästar importerades. Kontrollera avdelning, nummer, strykningar och utrustningsuppgifter.";
  }catch(e){$("importstatus").textContent="Kunde inte läsa JSON: "+e.message;}
 }
 $("jsonfile").addEventListener("change",async e=>{let f=e.target.files[0];if(f){$("jsonpaste").value=await f.text();importJSON();}});
@@ -144,51 +202,99 @@ $("csvfile").addEventListener("change",async e=>{
  const find=(...names)=>names.map(n=>headers.indexOf(n)).find(i=>i>=0);
  let ix={avd:find("avd","avdelning","leg"),num:find("nr","nummer","number"),name:find("häst","hast","name"),driver:find("kusk","driver"),streak:find("streck","streck %","V85%"),odds:find("odds","vinnarodds"),shoes:find("skor","shoes"),cart:find("vagn","cart")};
  let added=0;
- lines.forEach(line=>{let a=parseLine(line),v=k=>ix[k]===undefined?-1:a[ix[k]];let leg=Number(v("avd")||1);if(leg<1||leg>8||!v("name"))return;races[leg-1].horses.push({num:v("num")||"",name:v("name"),driverName:v("driver")||"",streak:v("streak")||"",odds:v("odds")||"",shoes:v("shoes")||"",cart:v("cart")||"",form:5,development:5,driver:5,conditions:5,position:5,equipment:5,reliability:5});added++;});
- render();$("importstatus").textContent=added+" hästar importerades från CSV. Kontrollera att kolumnerna matchade och fyll i analysbetygen.";
+  lines.forEach(line=>{let a=parseLine(line),v=k=>ix[k]===undefined?-1:a[ix[k]];let leg=Number(v("avd")||1);if(leg<1||leg>N||!v("name"))return;races[leg-1].horses.push({num:v("num")||"",name:v("name"),driverName:v("driver")||"",streak:v("streak")||"",odds:v("odds")||"",shoes:v("shoes")||"",cart:v("cart")||"",form:5,development:5,driver:5,conditions:5,position:5,equipment:5,reliability:5});added++;});
+  render();renderHistoryOverview();save(true);$("importstatus").textContent=added+" hästar importerades från CSV. Kontrollera att kolumnerna matchade och fyll i analysbetygen.";
 });
-function downloadTemplate(){let a=document.createElement("a");let csv="avd;nr;häst;kusk;streck;odds;skor;vagn\n1;1;Exempelhäst;Exempelkusk;12;8,5;skor runt om;vanlig\n";a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="V85-startlista-mall.csv";a.click();URL.revokeObjectURL(a.href);}
+function downloadTemplate(){let a=document.createElement("a");let csv="avd;nr;häst;kusk;streck;odds;skor;vagn\n1;1;Exempelhäst;Exempelkusk;12;8,5;skor runt om;vanlig\n";a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download=gameType+"-startlista-mall.csv";a.click();URL.revokeObjectURL(a.href);}
 
 
 function nextSaturdayISO(){let d=new Date();let add=(6-d.getDay()+7)%7;if(add===0)add=7;d.setDate(d.getDate()+add);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 $("atgdate").value=nextSaturdayISO();
 const ATG="https://www.atg.se/services/racinginfo/v1/api";
-function collectV85Games(calendar){
+function collectSupportedGames(calendar){
  const found=[],seen=new Set(),types=new Set();
- const add=(obj,key="")=>{if(!obj)return;const id=typeof obj==="string"?obj:(obj.id||obj.gameId||obj.game_id||obj.game?.id);const label=String(key||obj.gameType||obj.type||obj.name||obj.gameTypeName||"").toUpperCase();if(id&&label.includes("V85")&&!seen.has(String(id))){seen.add(String(id));found.push({id:String(id),label:label||"V85"});}};
- const walk=(o,key="")=>{if(!o||typeof o!=="object")return;if(Array.isArray(o)){o.forEach(x=>walk(x,key));return;}for(const [k,v] of Object.entries(o)){const ku=k.toUpperCase();if(ku.startsWith("V"))types.add(ku);if(ku==="V85"||ku.includes("V85")){if(Array.isArray(v))v.forEach(x=>add(x,k));else if(typeof v==="string")add(v,k);else add(v,k);}walk(v,k);}};
- walk(calendar);return {found,types:[...types].filter(x=>/^V\d+$/.test(x)).sort()};
+ const add=(obj,key="")=>{
+  const id=typeof obj==="string"?obj:(obj?.id||obj?.gameId||obj?.game_id||obj?.game?.id);
+  const label=String(key||obj?.gameType||obj?.type||obj?.name||obj?.gameTypeName||"").toUpperCase();
+  const match=(label+" "+String(id||"").toUpperCase()).match(/V(?:75|85)/);
+  if(!id||!match)return;
+  const type=match[0];types.add(type);
+  if(!seen.has(String(id))){seen.add(String(id));found.push({id:String(id),type,label:label||type});}
+ };
+ const walk=(o,key="")=>{if(!o||typeof o!=="object")return;if(Array.isArray(o)){o.forEach(x=>walk(x,key));return;}for(const [k,v] of Object.entries(o)){if(/V(?:75|85)/i.test(k)){if(Array.isArray(v))v.forEach(x=>add(x,k));else add(v,k);}walk(v,k);}};
+ walk(calendar);return {found,types:[...types].sort()};
 }
-async function getAtgJSON(path){const r=await fetch(ATG+path,{headers:{"Accept":"application/json"}});if(!r.ok)throw new Error("ATG svarade HTTP "+r.status);return await r.json();}
+async function getAtgJSON(path){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+ try{const r=await fetch(ATG+path,{headers:{"Accept":"application/json"},signal:controller.signal});if(!r.ok)throw new Error("ATG svarade HTTP "+r.status);return await r.json();}
+ finally{clearTimeout(timer);}
+}
 async function fetchAtgCalendar(){
  const date=$("atgdate").value;if(!date){$("atgstatus").textContent="Välj datum först.";return null;}
- $("atgstatus").textContent="Söker i ATG:s tävlingskalender för "+date+"…";
- try{const j=await getAtgJSON("/calendar/day/"+date);window._atgCalendar=j;const {found,types}=collectV85Games(j);window._V85Candidates=found;
-  if(!found.length){$("atgchoices").innerHTML="";$("atgstatus").textContent="Kalendern svarade, men ingen omgång märkt V85 hittades detta datum. ATG visade spelformer: "+(types.join(", ")||"kunde inte identifieras")+". Kontrollera datumet eller om ATG använder en annan spelformsbeteckning.";return null;}
-  $("atgchoices").innerHTML=found.map(x=>`<p><button class="alt" onclick="selectAtgGame('${x.id.replace(/'/g,"\\'")}')">${esc(x.label)} · ${esc(x.id)}</button></p>`).join("");
-  $("atgstatus").textContent="Hittade "+found.length+" V85-omgång(ar). Hämtar första förslaget automatiskt…";return found[0].id;
- }catch(e){$("atgstatus").textContent="Automatisk kalendersökning misslyckades: "+e.message+". Om Safari blockerar anslutningen kan en servermellanhand behövas. CSV/JSON-import finns som reserv.";return null;}
+ $("atgstatus").textContent="Söker tävlingskalender för "+date+"…";
+ try{
+  const j=await getAtgJSON("/calendar/day/"+date);window._atgCalendar=j;
+  const {found,types}=collectSupportedGames(j);window._gameCandidates=found;
+  $("atgchoices").innerHTML=found.map((x,i)=>'<p><button class="alt" data-game-index="'+i+'">'+esc(x.type)+" · "+esc(x.id)+"</button></p>").join("");
+  $("atgchoices").querySelectorAll("button").forEach((el,i)=>{el.onclick=()=>selectAtgGame(found[i].id);});
+  const selection=$("gameType").value,preferred=selection==="auto"?preferredGameType(date):selection;
+  const candidates=selection==="auto"?found:found.filter(x=>x.type===selection);
+  const pick=candidates.find(x=>x.type===preferred)||candidates[0];
+  if(!pick){$("atgstatus").textContent="Hittade ingen "+(selection==="auto"?"V75/V85":selection)+" den "+date+". Tillgängliga: "+(types.join(", ")||"inga speltyper identifierade")+". Kontrollera datum.";return null;}
+  window._selectedGameType=pick.type;
+  $("atgstatus").textContent="Hittade "+found.length+" omgång(ar). Valt "+pick.type+" – hämtar startlistan.";
+  return pick.id;
+ }catch(e){$("atgstatus").textContent="Kalenderhämtningen misslyckades: "+e.message+". CSV/JSON finns som reserv.";return null;}
 }
-async function selectAtgGame(id){$("atggameid").value=id;await fetchAtgGame();}
+async function selectAtgGame(id){$("atggameid").value=id;window._selectedGameType=window._gameCandidates?.find(x=>x.id===id)?.type||null;await fetchAtgGame();}
 async function startAutoFetch(){
  const top=$("topfetchstatus");
- if(top)top.textContent="Söker efter V85-startlistan. Vänta medan ATG svarar…";
- try{await autoFetchV85();}catch(e){if(top)top.textContent="Hämtningen avbröts: "+e.message;}
- if(top)top.textContent=$("atgstatus")?.textContent||"Sökningen är avslutad. Se ATG-status längre ned.";
+ if(top)top.textContent="Hämtar startlista och kontrollerar historik automatiskt…";
+ try{await autoFetchGame();}catch(e){if(top)top.textContent="Hämtningen avbröts: "+e.message;return;}
+ if(top)top.textContent=$("atgstatus")?.textContent||"Hämtningen är klar. Se datastatus längre ned.";
 }
-async function autoFetchV85(){const id=await fetchAtgCalendar();if(id){$("atggameid").value=id;await fetchAtgGame();}}
+async function autoFetchGame(){const id=await fetchAtgCalendar();if(id){$("atggameid").value=id;return await fetchAtgGame();}return false;}
 function extractGameRaces(j){let a=j?.races||j?.game?.races||j?.game?.legs||j?.legs||[];if(Array.isArray(a))return a;return Object.values(a||{}).filter(x=>x&&typeof x==="object");}
 async function fetchAtgGame(){
- const id=$("atggameid").value.trim();if(!id){$("atgstatus").textContent="Sök datumet först eller ange ett omgångs-ID.";return;}
+ const id=$("atggameid").value.trim();if(!id){$("atgstatus").textContent="Sök datumet först eller ange ett omgångs-ID.";return false;}
+ const detected=id.toUpperCase().match(/^V(?:75|85)(?:[_-]|$)/)?.[0]?.slice(0,3)||window._selectedGameType||($("gameType").value==="auto"?preferredGameType($("atgdate").value):$("gameType").value);
+ const type=GAME_CONFIG[detected]?detected:gameType,expected=GAME_CONFIG[type].legs;
  $("atgstatus").textContent="Hämtar startlista för "+id+"…";
- try{const j=await getAtgJSON("/games/"+encodeURIComponent(id));window._atgGame=j;const legs=extractGameRaces(j);if(!legs.length)throw new Error("ATG-svaret innehöll inga lopp i känt format.");
-  if(legs.length!==8)$("atgstatus").textContent="Varning: ATG returnerade "+legs.length+" lopp, inte åtta. Kontrollerar innehållet…";
-  let count=0;const newRaces=Array.from({length:N},(_,i)=>({horses:[],raceId:null,raceName:""}));
-  legs.slice(0,8).forEach((race,i)=>{const starts=race.starts||race.starting||race.runners||race.entries||[];if(!Array.isArray(starts))return;newRaces[i].raceId=race.id||race.raceId||race.race?.id||null;newRaces[i].raceName=race.name||race.track?.name||"";newRaces[i].horses=starts.map(st=>{const horse=st.horse||{},driver=st.driver||{},pool=st.pools?.V85||st.pools?.V85||st.pools?.["V85"]||{};let bd=pool.betDistribution??st.betDistribution??"";if(bd!==""&&Number(bd)>100)bd=Number(bd)/100;const shoes=st.shoes||horse.shoes||"",sulky=st.sulky||"";return {horseId:horse.id||st.horseId||null,targetDistance:race.distance||null,history:[],num:st.startNumber||st.number||st.postPosition||"",name:horse.name||st.horseName||st.name||"",driverName:[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||st.driverName||"",streak:bd===""?"":Number(bd).toFixed(2),odds:st.finalOdds||st.odds||"",shoes:typeof shoes==="string"?shoes:JSON.stringify(shoes),cart:typeof sulky==="string"?sulky:JSON.stringify(sulky),notes:"Hämtad från ATG. Kontrollera sena ändringar.",form:5,development:5,driver:5,conditions:5,position:5,equipment:5,reliability:5};});count+=starts.length;});
-  if(!count)throw new Error("Startlistan hittades, men hästarnas startfält hade ett oväntat format.");
-  races=newRaces;$("date").value=$("atgdate").value;const first=legs[0]||{};$("track").value=first.track?.name||first.name||"";render();renderHistoryOverview();save(true);
-  const legText=legs.length===8?"Alla åtta avdelningar":legs.length+" avdelningar";$("atgstatus").textContent="Klart! "+count+" hästar hämtades i "+legText+" från "+id+". Omgången sparades automatiskt på den här enheten. Kontrollera strykningar och utrustningsändringar nära start.";
- }catch(e){$("atgstatus").textContent="Kunde inte hämta startlistan: "+e.message+". Kontrollera omgångs-ID och nätverksanslutning. Om Safari blockerar ATG:s API krävs en servermellanhand eller CSV/JSON-import.";}
+ try{
+  const j=await getAtgJSON("/games/"+encodeURIComponent(id)),legs=extractGameRaces(j);
+  if(legs.length!==expected)throw new Error("Omgången innehåller "+legs.length+" avdelningar, men "+type+" kräver "+expected+". Ingen ofullständig omgång lästes in.");
+  const oldSameGame=window._currentGameId===id;
+  const oldHorses=oldSameGame?new Map(races.flatMap(r=>r.horses).filter(h=>h.horseId).map(h=>[String(h.horseId),h])):new Map();
+  const cache=historyCache(),newRaces=Array.from({length:expected},()=>({horses:[],raceId:null,raceName:""}));
+  let count=0;
+  legs.forEach((race,i)=>{
+   const starts=race.starts||race.starting||race.runners||race.entries||[];
+   if(!Array.isArray(starts))throw new Error("Avd "+(i+1)+" saknar startfält i känt format.");
+   newRaces[i].raceId=race.id||race.raceId||race.race?.id||null;
+   newRaces[i].raceName=race.name||race.track?.name||"";
+   newRaces[i].horses=starts.map(st=>{
+    const horse=st.horse||{},driver=st.driver||{},pool=st.pools?.[type]||{};
+    let bd=pool.betDistribution??st.betDistribution??"";
+    if(bd!==""&&Number(bd)>100)bd=Number(bd)/100;
+    const shoes=st.shoes||horse.shoes||"",sulky=st.sulky||"",horseId=horse.id||st.horseId||null;
+    const h={horseId,targetDistance:race.distance||null,history:[],num:st.startNumber||st.number||st.postPosition||"",name:horse.name||st.horseName||st.name||"",driverName:[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||st.driverName||"",streak:bd===""?"":Number(bd).toFixed(2),odds:st.finalOdds||st.odds||"",shoes:typeof shoes==="string"?shoes:JSON.stringify(shoes),cart:typeof sulky==="string"?sulky:JSON.stringify(sulky),notes:"Uppgifter från ATG. Kontrollera sena ändringar.",form:5,development:5,driver:5,conditions:5,position:5,equipment:5,reliability:5};
+    mergeCachedHistory(h,cache);
+    const previous=horseId&&oldHorses.get(String(horseId));
+    if(previous){for(const [key] of keys)h[key]=previous[key]??h[key];h.notes=previous.notes||h.notes;if(previous.history?.length)mergeHorseHistory(h,previous.history,previous.historyHasMore,previous.historySource||"Sparad historik");}
+    return h;
+   });
+   count+=starts.length;
+  });
+  if(!count)throw new Error("Inga startande hästar hittades.");
+  configureGame(type,true);races=newRaces;window._atgGame=j;window._currentGameId=id;window._selectedGameType=type;window._lastUpdated=new Date().toISOString();
+  $("date").value=$("atgdate").value;$("track").value=legs[0]?.track?.name||legs[0]?.name||"";
+  render();renderHistoryOverview();save(true);
+  $("atgstatus").textContent="Startlistan klar: "+count+" hästar, "+expected+" avdelningar i "+type+". Kontrollerar historik…";
+  try{await fetchAllHorseHistory();}catch(error){$("historystatus").textContent="Historiken kunde inte kontrolleras: "+error.message;}
+  buildBalancedSystem();
+  $("atgstatus").textContent="Klart: "+type+" med "+expected+" avdelningar och "+count+" hästar. Ett balanserat system har byggts inom "+enforceBudget()+" kr. Kontrollera strykningar innan spel.";
+  return true;
+ }catch(e){$("atgstatus").textContent="Kunde inte hämta omgången: "+e.message+". Tidigare sparad omgång finns kvar.";return false;}
 }
 
 
@@ -208,10 +314,11 @@ function currentHorseMatch(horse,legIndex=null,startNumber=null){
  return nameMatches.length===1?nameMatches[0].h:null;
 }
 function extractHistoryRecords(st){
- const result=st?.results||st?.result||{};
- const candidates=[result?.records,result?.starts,result?.history,st?.records,st?.pastStarts,st?.previousStarts,st?.history,Array.isArray(st?.results)?st.results:null,Array.isArray(st?.result)?st.result:null];
- for(const value of candidates)if(Array.isArray(value))return value;
- return [];
+ const h=st?.horse||{},res=st?.results||st?.result||{},hres=h.results||h.result||{};
+ const sources=[res.records,res.starts,res.history,st?.records,st?.pastStarts,st?.previousStarts,st?.history,st?.pastPerformances,st?.formRows,st?.lastStarts,h?.records,h?.pastStarts,h?.previousStarts,h?.history,h?.pastPerformances,h?.formRows,h?.lastStarts,hres.records,hres.starts,hres.history,Array.isArray(res)?res:null];
+ const out=[];
+ for(const value of sources){if(Array.isArray(value))for(const x of value){const date=x?.date||x?.startDate||x?.race?.date||x?.event?.date;if(date&&/^\d{4}-\d{2}-\d{2}/.test(String(date)))out.push(x);}}
+ return out;
 }
 function mergeHorseHistory(h,records,hasMore=false,source="ATG extended"){
  h.history=Array.isArray(h.history)?h.history:[];
@@ -224,35 +331,43 @@ function renderHistoryOverview(){
  $("historyoverview").innerHTML=`<div class="grid"><div><label>Hästar i omgången</label><b>${all.length}</b></div><div><label>Hästar med historik</label><b>${withHistory.length}</b></div><div><label>Importerade historiska starter</label><b>${starts}</b></div><div><label>Utländska starter</label><b>${foreign}</b></div></div>${countryRows.length?`<h3>Historikens länder – hela omgången</h3><div class="small" style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Land</th><th>Starter</th><th>Segrar</th><th>Topp 3</th></tr></thead><tbody>${countryRows.map(([c,v])=>`<tr><td>${esc(c)}</td><td>${v.starts}</td><td>${v.wins}</td><td>${v.top3}</td></tr>`).join('')}</tbody></table></div>`:''}<p class="small muted">${partial?partial+' hästar har markering om att fler historikrader kan finnas. ':''}Landssiffrorna summerar bara importerade och identifierade resultat. Okända landkoder visas separat; hästar utan historik är inte bedömda som hästar med noll starter.</p>`;
 }
 async function fetchAllHorseHistory(){
- const game=window._atgGame;const legs=extractGameRaces(game);
- if(!legs.length){$("historystatus").textContent="Hämta först V85-startlistan från ATG. Då kan historiken kopplas till rätt häst-ID.";return;}
- let fetched=0,records=0,matched=0,startsSeen=0,errors=[];
- $("historystatus").textContent="Hämtar historik från ATG. Vänta medan de åtta loppen kontrolleras…";
- for(let i=0;i<Math.min(8,legs.length);i++){
-  const race=legs[i],raceId=race.id||race.raceId||race.race?.id;
-  if(!raceId){errors.push(`Avd ${i+1}: lopp-ID saknas`);continue;}
+ const legs=extractGameRaces(window._atgGame);
+ if(!legs.length){$("historystatus").textContent="Hämta startlistan från ATG först. Importerad historik ligger kvar men kan inte kontrolleras automatiskt utan omgångsdata.";return;}
+ const raceDate=$("date").value||$("atgdate").value,matched=new Set(),errors=[];
+ let checked=0,extended=0,imported=0;
+ $("historystatus").textContent="Söker verkliga historikrader i startlista och utökad loppdata…";
+ const validPast=rows=>rows.filter(x=>{const d=x.date||x.startDate||x.race?.date||x.event?.date;return d&&(!raceDate||String(d).slice(0,10)<raceDate);});
+ function joinStarts(starts,i,source){
+  if(!Array.isArray(starts))return;
+  starts.forEach(st=>{
+   const hObj=st.horse||{},startNo=st.startNumber??st.number??st.postPosition??st.result?.startNumber;
+   const target=currentHorseMatch(hObj,i,startNo);if(!target)return;
+   matched.add(target);if(!target.horseId&&(hObj.id||hObj.horseId))target.horseId=hObj.id||hObj.horseId;
+   const recs=validPast(extractHistoryRecords(st));
+   if(recs.length){mergeHorseHistory(target,recs,!!st.results?.hasMoreRecords||!!st.result?.hasMoreRecords||!!st.hasMoreRecords,source);imported+=recs.length;}
+  });
+ }
+ async function checkRace(race,i){
+  const base=race.starts||race.starting||race.runners||race.entries||[];
+  joinStarts(base,i,"ATG startlista");
+  const raceId=race.id||race.raceId||race.race?.id;
+  if(!raceId){errors.push("Avd "+(i+1)+": lopp-ID saknas");checked++;return;}
   try{
    const ext=await getAtgJSON("/races/"+encodeURIComponent(raceId)+"/extended");
    const starts=ext.starts||ext.race?.starts||[];
-   if(!Array.isArray(starts))throw new Error("ATG-svaret saknar startfält i känt format");
-   startsSeen+=starts.length;
-   starts.forEach(st=>{
-    const hObj=st.horse||{},startNo=st.startNumber??st.number??st.postPosition??st.result?.startNumber;
-    const target=currentHorseMatch(hObj,i,startNo);if(!target)return;
-    matched++;
-    if(!target.horseId&&(hObj.id||hObj.horseId))target.horseId=hObj.id||hObj.horseId;
-    const recs=extractHistoryRecords(st),result=st.results||st.result||{};
-    mergeHorseHistory(target,recs,!!result.hasMoreRecords||!!st.hasMoreRecords,"ATG extended");
-    records+=recs.length;
-   });
-   fetched++;
-  }catch(e){errors.push(`Avd ${i+1}: ${e.message}`);}
-  $("historystatus").textContent=`Hämtar… ${fetched}/${Math.min(8,legs.length)} lopp, ${records} historikrader hittills.`;
-  render();renderHistoryOverview();await new Promise(r=>setTimeout(r,500));
+   if(!Array.isArray(starts))throw new Error("Startfält saknas");
+   joinStarts(starts,i,"ATG extended");extended++;
+  }catch(e){errors.push("Avd "+(i+1)+": "+e.message);}
+  checked++;
+  $("historystatus").textContent="Historik kontrollerad i "+checked+"/"+Math.min(N,legs.length)+" avdelningar. "+imported+" historikrader hittade före deduplicering.";
+ }
+ for(let i=0;i<Math.min(N,legs.length);i+=3){
+  await Promise.all(legs.slice(i,i+3).map((race,j)=>checkRace(race,i+j)));
  }
  render();renderHistoryOverview();save(true);
- const details=errors.length?" Problem: "+errors.join("; "):"";
- $("historystatus").textContent=`Klart: ${fetched} av ${Math.min(8,legs.length)} lopp hämtades. ${startsSeen} starter kontrollerades, ${matched} hästar kopplades och ${records} historikrader lästes in.${details} Om 0 rader fortfarande visas har ATG inte lämnat historikrader i svaret för den här omgången.`;
+ const horses=races.flatMap(r=>r.horses),withHistory=horses.filter(h=>historyStats(h).count).length;
+ const details=errors.length?" "+errors.join("; "):"";
+ $("historystatus").textContent="Historikkontroll klar: "+withHistory+"/"+horses.length+" hästar med faktiska historikrader, "+extended+"/"+Math.min(N,legs.length)+" utökade loppdata-svar. "+(withHistory<horses.length?"Saknade historikrader betyder inte noll starter. ":"")+details;
 }
 function importHorseHistoryJSON(){
  try{
@@ -267,9 +382,10 @@ function importHorseHistoryJSON(){
   render();renderHistoryOverview();save(true);$("historystatus").textContent=`Importerade ${added} historikrader. ${unmatched.length?`Kunde inte koppla ${unmatched.length} häst(ar): ${unmatched.join(', ')}. Kontrollera häst-ID eller namn.`:'Alla importerade hästar kopplades.'}`;
  }catch(e){$("historystatus").textContent="JSON kunde inte läsas: "+e.message;}
 }
-function downloadHistoryTemplate(){const data=[{horseId:"12345",horseName:"Hästnamn",starts:[{date:"2025-05-10",country:"SE",track:"Solvalla",distance:2140,startMethod:"auto",place:2,kmTime:"1.13,4",driver:"Kusk",galloped:false,disqualified:false,scratched:false,source:"Manuell/extern källa"}]}];const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download="V85-historikmall.json";a.click();URL.revokeObjectURL(a.href);}
-function downloadHistoryCSV(){let rows=[["Häst-ID","Häst","Datum","Land","Bana","Distans","Startmetod","Placering","Kilometertid","Odds","Kusk","Tränare","Galopp","Diskvalificerad","Struken","Prispengar","Källa"]];races.forEach(r=>r.horses.forEach(h=>(h.history||[]).forEach(x=>rows.push([h.horseId||"",h.name,x.date,x.country,x.track,x.distance,x.startMethod,x.place,x.kmTime,x.odds,x.driver,x.trainer,x.galloped,x.disqualified,x.scratched,x.prizeMoney,x.source]))));const csv=rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(";")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="V85-hasthistorik.csv";a.click();URL.revokeObjectURL(a.href);}
+function downloadHistoryTemplate(){const data=[{horseId:"12345",horseName:"Hästnamn",starts:[{date:"2025-05-10",country:"SE",track:"Solvalla",distance:2140,startMethod:"auto",place:2,kmTime:"1.13,4",driver:"Kusk",galloped:false,disqualified:false,scratched:false,source:"Manuell/extern källa"}]}];const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download=gameType+"-historikmall.json";a.click();URL.revokeObjectURL(a.href);}
+function downloadHistoryCSV(){let rows=[["Häst-ID","Häst","Datum","Land","Bana","Distans","Startmetod","Placering","Kilometertid","Odds","Kusk","Tränare","Galopp","Diskvalificerad","Struken","Prispengar","Källa"]];races.forEach(r=>r.horses.forEach(h=>(h.history||[]).forEach(x=>rows.push([h.horseId||"",h.name,x.date,x.country,x.track,x.distance,x.startMethod,x.place,x.kmTime,x.odds,x.driver,x.trainer,x.galloped,x.disqualified,x.scratched,x.prizeMoney,x.source]))));const csv=rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(";")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download=gameType+"-hasthistorik.csv";a.click();URL.revokeObjectURL(a.href);}
 
-render();
-renderHistoryOverview();
+configureGame(preferredGameType($("atgdate").value),true);
+if(localStorage.getItem(SAVE_KEY)||localStorage.getItem("V85analyzer"))load(true);
+else{render();renderHistoryOverview();}
 </script></body></html>
