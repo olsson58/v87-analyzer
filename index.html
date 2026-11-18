@@ -1,8 +1,9 @@
-<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V85 Analyzer</title>
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V85 Analyzer 2.0</title>
 <style>
-:root{--bg:#f3f6f8;--ink:#172433;--muted:#647487;--line:#dce4eb;--blue:#155d91}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,sans-serif}header{background:#102b46;color:white;padding:22px}main,header div,footer{max-width:1100px;margin:auto}main{padding:16px}.panel,.race{background:white;border:1px solid var(--line);border-radius:13px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:125px}label{font-size:12px;color:var(--muted)}input,select,textarea{padding:9px;border:1px solid #cbd5df;border-radius:8px;font:inherit;width:100%;background:white;color:var(--ink)}button{background:var(--blue);color:white;border:0;border-radius:8px;padding:10px 13px;font-weight:700}button.alt{background:#e8eef4;color:#17344c}button.del{background:#f8e8e8;color:#8d2222}.horse{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.muted{color:var(--muted)}.small{font-size:12px}h1{margin:0;font-size:26px}h2{font-size:19px;margin:0 0 12px}.warn{background:#fff4df;border:1px solid #eed6a8;border-radius:9px;padding:11px;margin-bottom:14px}footer{padding:0 16px 22px;color:var(--muted);font-size:12px}
+:root{--bg:#f3f6f8;--ink:#172433;--muted:#647487;--line:#dce4eb;--blue:#155d91;--blue2:#e8f1f8;--green:#e8f5ed;--amber:#fff4df}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,sans-serif}header{background:#102b46;color:white;padding:22px 16px}main,header div,footer{max-width:1100px;margin:auto}main{padding:16px}.panel,.race{background:white;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(16,43,70,.035)}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:125px}label{font-size:13px;color:var(--muted)}input,select,textarea{padding:11px;border:1px solid #cbd5df;border-radius:10px;font:inherit;width:100%;background:white;color:var(--ink);min-height:44px}button{background:var(--blue);color:white;border:0;border-radius:10px;padding:12px 15px;font:inherit;font-weight:700;min-height:44px;cursor:pointer}button.alt{background:#e8eef4;color:#17344c}button.del{background:#f8e8e8;color:#8d2222}.horse{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.muted{color:var(--muted)}.small{font-size:13px}h1{margin:0;font-size:clamp(25px,5vw,36px)}h2{font-size:21px;margin:0 0 12px}h3{font-size:17px}.warn{background:var(--amber);border:1px solid #eed6a8;border-radius:10px;padding:12px;margin-bottom:14px}footer{padding:0 16px 22px;color:var(--muted);font-size:12px}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #8bbce0;outline-offset:2px}#topfetchstatus,#atgstatus,#historystatus{background:#f5f8fb;border-radius:10px;padding:10px;line-height:1.5}table{font-size:13px}th,td{padding:6px;border-bottom:1px solid var(--line);text-align:left}details summary{cursor:pointer;padding:8px 0;font-weight:650}
+@media(max-width:600px){header{padding:18px 14px}main{padding:10px}.panel,.race{padding:14px;border-radius:13px}.row{align-items:stretch}.row>.field{min-width:calc(50% - 6px)}button{width:100%}.row button{flex:1 1 100%}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.horse .grid{grid-template-columns:repeat(2,minmax(0,1fr))}input,select,textarea{font-size:16px}h2{font-size:19px}table{min-width:520px}}
 </style></head><body>
-<header><div><h1>🏇 V85 Analyzer</h1><div>Form • kusk • skor • bana • väder • utveckling • spelvärde</div></div></header>
+<header><div><h1>🏇 V85 Analyzer</h1><div class="small" style="opacity:.8">Version 2.0 • mobilanpassad analys</div><div>Form • kusk • skor • bana • väder • utveckling • spelvärde</div></div></header>
 <main>
 <div class="panel"><h2>Kom igång – tre enkla steg</h2><div class="row"><button onclick="startAutoFetch()">1. Hämta V85-startlistan automatiskt</button><button class="alt" onclick="fetchAllHorseHistory()">2. Hämta hästarnas historik</button><button class="alt" onclick="save(true);alert('Analysen sparades på den här enheten.')">3. Spara analysen</button></div><p id="topfetchstatus" class="small" role="status" aria-live="polite" style="margin-top:10px">Redo att söka. Starta hämtningen med knappen ovan.</p><p class="small muted">Välj omgångsdatum i ATG-rutan nedan. Programmet söker i ATG:s publika kalender och läser in startlistan. Kontrollera alltid att rätt omgång och alla åtta avdelningar har hämtats. Sena ändringar kan kräva en ny hämtning.</p></div>
 <section class="panel"><h2>Omgång och budget</h2><div class="row">
@@ -47,7 +48,7 @@
 </section>
 <section class="panel" id="historyPanel">
 <h2>Hästens kompletta tävlingshistorik – Sverige och utlandet</h2>
-<p class="small muted">Hämta historikrader via ATG:s utökade loppdata när den finns tillgänglig. Historiken kopplas med hästens ID, inte bara namnet. Importera kompletterande historik från CSV/JSON om någon start saknas.</p>
+<p class="small muted">Hämta historikrader via ATG:s utökade loppdata när den finns tillgänglig. Hästar kopplas i första hand med ID, därefter med startnummer och unikt namn i rätt avdelning. Programmet redovisar även när ATG inte lämnar historikrader. Komplettera vid behov med CSV/JSON.</p>
 <div class="row">
 <button onclick="fetchAllHorseHistory()">Hämta historik för alla 8 avdelningar</button>
 <button class="alt" onclick="downloadHistoryCSV()">Exportera all hästhistorik (CSV)</button>
@@ -58,7 +59,7 @@
 <div id="historyoverview" style="margin-top:12px"></div>
 <p class="small muted">Landjämförelsen visar separata resultat för Sverige, Norge, Danmark, Finland, Frankrike och andra länder när landkoder finns. Historikjusteringen är en försiktig, experimentell tumregel – inte en validerad vinstprognos. Den påverkar rankingen lite och ska utvärderas mot kommande resultat. Källbegränsning: ATG:s utökade historikrader är en praktisk startpunkt men API:t är odokumenterat och kan ändras. Om källan anger att fler poster finns, eller en utländsk start saknas, visas historiken som ofullständig tills den kompletterats. Inga saknade starter räknas som nollresultat.</p>
 </section>
-<section class="panel"><h2>Systembyggare</h2><p class="small muted">Markera hästar i varje avdelning. Kostnad = antal rader × radpris.</p><div id="system"></div><div class="row"><button onclick="calc()">Beräkna system</button><button class="alt" onclick="topTwo()">Markera två högst rankade per avdelning</button></div></section>
+<section class="panel"><h2>Systembyggare</h2><p class="small muted">Markera hästar i varje avdelning. Kostnad = antal rader × radpris.</p><div id="system"></div><div class="row"><button onclick="calc()">Beräkna system</button><button class="alt" onclick="buildBalancedSystem()">Bygg balanserat system inom budget</button><button class="alt" onclick="topTwo()">Markera två högst rankade per avdelning</button></div></section>
 <section class="panel"><h2>Viktning i analysen</h2><div class="grid"><div><b>Form 25 %</b><div class="small muted">Senaste prestationer.</div></div><div><b>Hästutveckling 15 %</b><div class="small muted">Kapacitet och trend.</div></div><div><b>Kusk 15 %</b><div class="small muted">Kuskform och samspel.</div></div><div><b>Bana/väder 15 %</b><div class="small muted">Passar dagens förhållanden?</div></div><div><b>Spår/loppbild 15 %</b><div class="small muted">Startspår, distans och position.</div></div><div><b>Skor/vagn 10 %</b><div class="small muted">Balans och utrustningsändringar.</div></div><div><b>Stabilitet 5 %</b><div class="small muted">Jämnhet och galopprisk.</div></div></div><p class="small muted">Betygen 0–10 är manuella bedömningar. Modellens vinstchans är en jämförande uppskattning inom avdelningen, inte en garanti.</p></section>
 </main><footer>V85 Analyzer • Startlistor och analys sparas lokalt i webbläsaren på den enhet där filen öppnas. Spela ansvarsfullt och håll dig till din budget.</footer>
 <script>
@@ -69,10 +70,10 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 
 const normName=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
 function normHistoryRecord(x){
- const race=x.race||{},track=x.track||race.track||{},start=x.start||{},driver=x.driver||start.driver||{};
- const placeRaw=x.place??x.result?.place??null;const km=x.kmTime??x.result?.kmTime??x.time??"";
+ const race=x.race||x.event||{},track=x.track||race.track||{},start=x.start||{},driver=x.driver||start.driver||x.result?.driver||{};
+ const result=x.result||x.results||{};const placeRaw=x.place??x.finishPosition??result.place??result.finishPosition??null;const km=x.kmTime??result.kmTime??result.time??x.time??"";
  const kmText=typeof km==="object"?[km.minutes,km.seconds,km.tenths].filter(v=>v!==undefined&&v!==null).join(":"):km;
- return {date:x.date||race.date||"",country:x.country||x.countryCode||track.countryCode||track.country||"",track:typeof track==="string"?track:(track.name||x.trackName||race.trackName||""),distance:Number(x.distance||start.distance||race.distance||0)||"",startMethod:x.startMethod||race.startMethod||"",place:placeRaw===undefined?null:placeRaw,finishOrder:x.finishOrder??null,kmTime:String(kmText||""),odds:x.odds??x.finalOdds??"",driver:x.driverName||[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||x.driver||"",trainer:x.trainerName||"",galloped:!!(x.galloped||x.result?.galloped),disqualified:!!(x.disqualified||x.result?.disqualified),scratched:!!(x.scratched||x.result?.scratched),prizeMoney:x.prizeMoney??x.result?.prizeMoney??null,source:x.source||"Importerad",raceId:x.raceId||race.id||""};
+ return {date:x.date||race.date||"",country:x.country||x.countryCode||race.countryCode||track.countryCode||track.country||"",track:typeof track==="string"?track:(track.name||x.trackName||race.trackName||""),distance:Number(x.distance||start.distance||race.distance||0)||"",startMethod:x.startMethod||race.startMethod||"",place:placeRaw===undefined?null:placeRaw,finishOrder:x.finishOrder??result.finishOrder??null,kmTime:String(kmText||""),odds:x.odds??x.finalOdds??"",driver:x.driverName||[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||x.driver||"",trainer:x.trainerName||"",galloped:!!(x.galloped||x.result?.galloped),disqualified:!!(x.disqualified||x.result?.disqualified),scratched:!!(x.scratched||x.result?.scratched),prizeMoney:x.prizeMoney??x.result?.prizeMoney??null,source:x.source||"Importerad",raceId:x.raceId||race.id||""};
 }
 function countryInfo(raw){const v=String(raw??"").trim().toUpperCase();const aliases={SE:"Sverige",SWE:"Sverige",SWEDEN:"Sverige",SV:"Sverige",NO:"Norge",NOR:"Norge",NORWAY:"Norge",DK:"Danmark",DEN:"Danmark",DENMARK:"Danmark",FI:"Finland",FIN:"Finland",FINLAND:"Finland",FR:"Frankrike",FRA:"Frankrike",FRANCE:"Frankrike",DE:"Tyskland",GER:"Tyskland",GERMANY:"Tyskland",IT:"Italien",ITA:"Italien",ITALY:"Italien",US:"USA",USA:"USA",UNITEDSTATES:"USA",BE:"Belgien",BEL:"Belgien",BELGIUM:"Belgien",NL:"Nederländerna",NED:"Nederländerna",NETHERLANDS:"Nederländerna"};const key=v.replace(/[^A-Z]/g,"");return aliases[key]||(v?String(raw).trim():"Okänt land");}
 function countryStats(h){const valid=(h.history||[]).filter(x=>!x.scratched&&(x.place!==null&&x.place!==undefined||x.finishOrder!==null&&x.finishOrder!==undefined||x.galloped||x.disqualified));const groups={};valid.forEach(x=>{const c=countryInfo(x.country);(groups[c]??=[]).push(x)});return Object.entries(groups).map(([country,a])=>{const completed=a.filter(x=>x.place!==null&&x.place!==undefined);const wins=completed.filter(x=>Number(x.place)===1).length;const top3=completed.filter(x=>Number(x.place)>=1&&Number(x.place)<=3).length;const errors=a.filter(x=>x.galloped||x.disqualified).length;const avg=completed.length?completed.reduce((sum,x)=>sum+Number(x.place),0)/completed.length:null;return {country,count:a.length,completed:completed.length,wins,top3,errors,winPct:completed.length?wins/completed.length*100:null,top3Pct:completed.length?top3/completed.length*100:null,errorPct:a.length?errors/a.length*100:null,avgPlace:avg};}).sort((a,b)=>b.count-a.count);}
@@ -90,6 +91,32 @@ function set(i,j,k,v){races[i].horses[j][k]=v;save(true)}
 function removeH(i,j){races[i].horses.splice(j,1);render();save(true)}
 function topTwo(){races.forEach((r,i)=>{let top=rank(i).slice(0,2).map(x=>x.j);r.horses.forEach((h,j)=>h.selected=top.includes(j))});render();calc()}
 function calc(){let counts=races.map(r=>r.horses.filter(h=>h.selected).length),missing=counts.indexOf(0);if(missing>=0){$("system").innerHTML=`<p class="warn">Välj minst en häst i avdelning ${missing+1}.</p>`;return}let rows=counts.reduce((a,b)=>a*b,1),cost=rows*(Number($("unit").value)||.5),budget=Number($("budget").value)||0;$("system").innerHTML=`<div class="grid"><div><label>Valda hästar per avdelning</label><b>${counts.join(" × ")}</b></div><div><label>Antal rader</label><b>${rows.toLocaleString("sv-SE")}</b></div><div><label>Beräknad kostnad</label><b>${cost.toLocaleString("sv-SE",{maximumFractionDigits:2})} kr</b></div><div><label>Budget</label><b>${budget} kr</b></div></div><p class="${cost>budget?'warn':'small muted'}">${cost>budget?'Systemet överskrider budgeten. Minska antalet hästar.':'Systemet ryms inom budgeten.'}</p><h3>Ranking per avdelning</h3>${races.map((r,i)=>`<p><b>Avd ${i+1}:</b> ${rank(i).map(h=>`${esc(h.num)} ${esc(h.name||'Namnlös')} (${h.s.toFixed(1)}/10, modell ${h.p.toFixed(0)} %, spelvärde ${h.edge>=0?'+':''}${h.edge.toFixed(1)} pp)`).join(" · ")}</p>`).join("")}`}
+function buildBalancedSystem(){
+ const budget=Math.max(0,Number($("budget").value)||300),unit=Math.max(.01,Number($("unit").value)||.5),maxRows=Math.floor(budget/unit);
+ if(races.some(r=>!r.horses.length)){$("system").innerHTML='<p class="warn">Hämta startlistan först så att alla avdelningar har hästar.</p>';return;}
+ races.forEach(r=>r.horses.forEach(h=>h.selected=false));
+ // Start with one top-ranked horse per leg, then expand the most valuable uncovered choice while budget allows.
+ races.forEach((r,i)=>{const best=rank(i)[0];if(best)r.horses[best.j].selected=true;});
+ const product=()=>races.reduce((n,r)=>n*Math.max(1,r.horses.filter(h=>h.selected).length),1);
+ while(product()<maxRows){
+  let choice=null;
+  races.forEach((r,i)=>{
+   const selected=r.horses.filter(h=>h.selected).length;
+   const candidates=rank(i).filter(x=>!r.horses[x.j].selected);
+   candidates.forEach((x,pos)=>{
+    const next=product()/Math.max(1,selected)*(selected+1);
+    if(next>maxRows)return;
+    const value=(x.p/100)*(1+(Number(x.edge)||0)/100)/(1+pos*.18);
+    if(!choice||value>choice.value)choice={i,j:x.j,value};
+   });
+  });
+  if(!choice)break;
+  races[choice.i].horses[choice.j].selected=true;
+ }
+ render();calc();save(true);
+ const rows=product(),cost=rows*unit;
+ $("system").insertAdjacentHTML("afterbegin",`<p class="small" style="background:#e8f5ed;padding:10px;border-radius:9px">Balanserat förslag skapat: ${rows.toLocaleString('sv-SE')} rader, ${cost.toLocaleString('sv-SE',{maximumFractionDigits:2})} kr. Kontrollera alltid hästar, strykningar och sena ändringar.</p>`);
+}
 function save(silent=false){localStorage.setItem("V85analyzer",JSON.stringify({races,track:$("track").value,date:$("date").value,weather:$("weather").value,budget:$("budget").value,unit:$("unit").value,strategy:$("strategy").value,gameId:$("atggameid")?.value||"",atgGame:window._atgGame||null}));if(!silent)alert("Omgången sparad i webbläsaren.")}
 function load(){let x=localStorage.getItem("V85analyzer");if(!x){alert("Ingen sparad omgång hittades.");return}let o=JSON.parse(x);if(o.atgGame)window._atgGame=o.atgGame;if(o.gameId&&$("atggameid"))$("atggameid").value=o.gameId;races=o.races.map(r=>({...r,horses:(r.horses||[]).map(h=>({...h,history:Array.isArray(h.history)?h.history:[]}))}));["track","date","weather","budget","unit","strategy"].forEach(k=>$(k).value=o[k]??(k==="strategy"?"Balanserad":""));render()}
 function resetAll(){if(confirm("Rensa hela omgången?")){races=Array.from({length:N},()=>({horses:[]}));render();$("system").innerHTML=""}}
@@ -165,12 +192,26 @@ async function fetchAtgGame(){
 }
 
 
-function currentHorseMatch(horse){
- const id=horse?.id??horse?.horseId??null;const name=normName(horse?.name||horse?.horseName||"");let nameMatches=[];
- for(let i=0;i<races.length;i++)for(let j=0;j<races[i].horses.length;j++){
-  const h=races[i].horses[j];if(id&&h.horseId&&String(id)===String(h.horseId))return h;if(name&&normName(h.name)===name&&!h.horseId)nameMatches.push(h);
+function currentHorseMatch(horse,legIndex=null,startNumber=null){
+ const id=horse?.id??horse?.horseId??horse?.horse?.id??null;
+ const name=normName(horse?.name||horse?.horseName||horse?.horse?.name||"");
+ const all=races.flatMap((r,i)=>r.horses.map(h=>({h,i})));
+ if(id){const byId=all.find(x=>x.h.horseId&&String(x.h.horseId)===String(id));if(byId)return byId.h;}
+ if(legIndex!==null&&legIndex>=0&&legIndex<races.length){
+  const list=races[legIndex].horses;
+  const byNumber=startNumber!==null&&startNumber!==undefined?list.find(h=>String(h.num)===String(startNumber)):null;
+  if(byNumber&&(!name||normName(byNumber.name)===name))return byNumber;
+  const inLeg=list.filter(h=>name&&normName(h.name)===name);
+  if(inLeg.length===1)return inLeg[0];
  }
- return nameMatches.length===1?nameMatches[0]:null;
+ const nameMatches=all.filter(x=>name&&normName(x.h.name)===name);
+ return nameMatches.length===1?nameMatches[0].h:null;
+}
+function extractHistoryRecords(st){
+ const result=st?.results||st?.result||{};
+ const candidates=[result?.records,result?.starts,result?.history,st?.records,st?.pastStarts,st?.previousStarts,st?.history,Array.isArray(st?.results)?st.results:null,Array.isArray(st?.result)?st.result:null];
+ for(const value of candidates)if(Array.isArray(value))return value;
+ return [];
 }
 function mergeHorseHistory(h,records,hasMore=false,source="ATG extended"){
  h.history=Array.isArray(h.history)?h.history:[];
@@ -185,26 +226,33 @@ function renderHistoryOverview(){
 async function fetchAllHorseHistory(){
  const game=window._atgGame;const legs=extractGameRaces(game);
  if(!legs.length){$("historystatus").textContent="Hämta först V85-startlistan från ATG. Då kan historiken kopplas till rätt häst-ID.";return;}
- let fetched=0,records=0,errors=[];$("historystatus").textContent="Hämtar historik från ATG:s utökade loppdata. Det kan ta en liten stund…";
+ let fetched=0,records=0,matched=0,startsSeen=0,errors=[];
+ $("historystatus").textContent="Hämtar historik från ATG. Vänta medan de åtta loppen kontrolleras…";
  for(let i=0;i<Math.min(8,legs.length);i++){
   const race=legs[i],raceId=race.id||race.raceId||race.race?.id;
   if(!raceId){errors.push(`Avd ${i+1}: lopp-ID saknas`);continue;}
   try{
-   const res=await fetch(ATG+"/races/"+encodeURIComponent(raceId)+"/extended",{headers:{"Accept":"application/json"}});
-   if(!res.ok)throw new Error("HTTP "+res.status);
-   const ext=await res.json(),starts=ext.starts||ext.race?.starts||[];
+   const ext=await getAtgJSON("/races/"+encodeURIComponent(raceId)+"/extended");
+   const starts=ext.starts||ext.race?.starts||[];
+   if(!Array.isArray(starts))throw new Error("ATG-svaret saknar startfält i känt format");
+   startsSeen+=starts.length;
    starts.forEach(st=>{
-    const hObj=st.horse||{},target=currentHorseMatch(hObj);if(!target)return;
-    if(!target.horseId&&hObj.id)target.horseId=hObj.id;
-    const result=st.results||st.result||{};const recs=result.records||st.records||[];
-    mergeHorseHistory(target,recs,!!result.hasMoreRecords||!!st.hasMoreRecords,"ATG extended");records+=recs.length;
+    const hObj=st.horse||{},startNo=st.startNumber??st.number??st.postPosition??st.result?.startNumber;
+    const target=currentHorseMatch(hObj,i,startNo);if(!target)return;
+    matched++;
+    if(!target.horseId&&(hObj.id||hObj.horseId))target.horseId=hObj.id||hObj.horseId;
+    const recs=extractHistoryRecords(st),result=st.results||st.result||{};
+    mergeHorseHistory(target,recs,!!result.hasMoreRecords||!!st.hasMoreRecords,"ATG extended");
+    records+=recs.length;
    });
    fetched++;
   }catch(e){errors.push(`Avd ${i+1}: ${e.message}`);}
-  render();renderHistoryOverview();await new Promise(r=>setTimeout(r,650));
+  $("historystatus").textContent=`Hämtar… ${fetched}/${Math.min(8,legs.length)} lopp, ${records} historikrader hittills.`;
+  render();renderHistoryOverview();await new Promise(r=>setTimeout(r,500));
  }
- render();renderHistoryOverview();
- $("historystatus").textContent=`Klart: ${fetched} av ${Math.min(8,legs.length)} lopp hämtades. ${records} historikrader lästes in.${errors.length?' Problem: '+errors.join('; '):''} Kontrollera täckningen per häst och komplettera vid behov.`;
+ render();renderHistoryOverview();save(true);
+ const details=errors.length?" Problem: "+errors.join("; "):"";
+ $("historystatus").textContent=`Klart: ${fetched} av ${Math.min(8,legs.length)} lopp hämtades. ${startsSeen} starter kontrollerades, ${matched} hästar kopplades och ${records} historikrader lästes in.${details} Om 0 rader fortfarande visas har ATG inte lämnat historikrader i svaret för den här omgången.`;
 }
 function importHorseHistoryJSON(){
  try{
@@ -216,7 +264,7 @@ function importHorseHistoryJSON(){
    if(!target){unmatched.push(g.horseName||g.name||g.horseId||"Okänd häst");return;}
    mergeHorseHistory(target,starts,!!g.hasMoreRecords,g.source||"Egen komplettering");added+=starts.length;
   });
-  render();renderHistoryOverview();$("historystatus").textContent=`Importerade ${added} historikrader. ${unmatched.length?`Kunde inte koppla ${unmatched.length} häst(ar): ${unmatched.join(', ')}. Kontrollera häst-ID eller namn.`:'Alla importerade hästar kopplades.'}`;
+  render();renderHistoryOverview();save(true);$("historystatus").textContent=`Importerade ${added} historikrader. ${unmatched.length?`Kunde inte koppla ${unmatched.length} häst(ar): ${unmatched.join(', ')}. Kontrollera häst-ID eller namn.`:'Alla importerade hästar kopplades.'}`;
  }catch(e){$("historystatus").textContent="JSON kunde inte läsas: "+e.message;}
 }
 function downloadHistoryTemplate(){const data=[{horseId:"12345",horseName:"Hästnamn",starts:[{date:"2025-05-10",country:"SE",track:"Solvalla",distance:2140,startMethod:"auto",place:2,kmTime:"1.13,4",driver:"Kusk",galloped:false,disqualified:false,scratched:false,source:"Manuell/extern källa"}]}];const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download="V85-historikmall.json";a.click();URL.revokeObjectURL(a.href);}
