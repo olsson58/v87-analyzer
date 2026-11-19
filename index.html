@@ -6,7 +6,7 @@
 </style></head><body>
 <header><div><h1>🏇 Trav Analyzer</h1><div class="small" style="opacity:.8">Version 3.0 • V75 + V85 • ett balanserat system upp till 300 kr</div><div>Startlista • form • historik • spelvärde</div></div></header>
 <main>
-<div class="panel"><h2>Din omgång – ett tryck</h2><div class="row"><button onclick="startAutoFetch()">Hämta omgång och historik</button><button class="alt" onclick="buildBalancedSystem()">Bygg balanserat system</button><button class="alt" onclick="save()">Spara analysen</button></div><p id="topfetchstatus" class="small" role="status" aria-live="polite" style="margin-top:10px">Välj datum längre ned och hämta omgången. Hästhistoriken kontrolleras automatiskt.</p><p class="small muted">Programmet hittar tillgänglig V85- eller V75-omgång, kontrollerar antal avdelningar och använder respektive officiellt radpris. Saknad historik visas som saknad – aldrig som noll starter.</p></div>
+<div class="panel"><h2>Din omgång – ett tryck</h2><div class="row"><button onclick="startAutoFetch()">Hämta verifierad omgång</button><button class="alt" onclick="buildBalancedSystem()">Bygg balanserat system</button><button class="alt" onclick="save()">Spara analysen</button></div><p id="topfetchstatus" class="small" role="status" aria-live="polite" style="margin-top:10px">Välj datum längre ned och hämta omgången från publicerade, kontrollerade data.</p><p class="small muted">V75/V85 och antal avdelningar kontrolleras mot omgångens data. En tillåten datakälla måste vara verifierad för att automatiken ska fungera; annars finns CSV/JSON-import som reserv. Saknad historik räknas aldrig som noll starter.</p></div>
 <section class="panel"><h2>Omgång och budget</h2><div class="row">
 <div class="field"><label>Spelform</label><select id="gameType" onchange="onGameTypeChange()"><option value="auto" selected>Automatisk (V75/V85)</option><option value="V85">V85 · 8 avdelningar</option><option value="V75">V75 · 7 avdelningar</option></select></div><div class="field"><label>Bana</label><input id="track" placeholder="Ex. Solvalla"></div><div class="field"><label>Datum</label><input id="date" type="date"></div><div class="field"><label>Väder / banförhållande</label><input id="weather" placeholder="+2 °C, regn, tung bana"></div><div class="field"><label>Budget (kr, max 300)</label><input id="budget" type="number" value="300" min="1" max="300" onchange="enforceBudget()"></div><div class="field"><label>Strategi</label><select id="strategy"><option selected>Balanserad</option></select></div><div class="field"><label>Radpris (kr)</label><input id="unit" type="number" value="0.50" readonly aria-label="Radpris väljs automatiskt efter spelform"></div></div>
 <div class="row" style="margin-top:12px"><button onclick="save()">Spara</button><button class="alt" onclick="load()">Ladda</button><button class="alt" onclick="csv()">Exportera CSV</button><button class="del" onclick="resetAll()">Rensa</button></div></section>
@@ -15,13 +15,13 @@
 
 
 <section class="panel" id="liveatg">
-<h2>Automatisk startlista – ATG</h2>
-<p class="small muted">Sök datum och hämta omgången med ett tryck. Kopplingen använder ATG:s publika men odokumenterade Racinginfo-API. Den kan påverkas av ändringar hos ATG eller webbläsarens nätverksskydd.</p>
+<h2>Startlista – verifierade data</h2>
+<p class="small muted">Safari läser i första hand publicerad kalender och startlista från vår egen GitHub Pages-adress. Endast rättighetskontrollerade omgångar tas med. Den äldre direkta ATG-kopplingen är ett separat experimentellt manuellt test och kan misslyckas i Safari. Ingen extern automatiserad datainsamling startas utan klarlagda rättigheter.</p>
 <div class="row">
 <div class="field"><label>Omgångsdatum</label><input id="atgdate" type="date"></div>
 <div class="field"><label>Omgångs-ID (fylls efter kalendersökning)</label><input id="atggameid" placeholder="V75_... eller V85_..."></div>
 </div>
-<div class="row" style="margin-top:10px"><button onclick="startAutoFetch()">Sök och hämta automatiskt</button><button class="alt" onclick="fetchAtgCalendar()">Visa tillgängliga omgångar</button><button class="alt" onclick="fetchAtgGame()">Hämta valt omgångs-ID</button></div>
+<div class="row" style="margin-top:10px"><button onclick="startAutoFetch()">Hämta verifierad omgång</button><button class="alt" onclick="fetchAtgCalendar()">Visa publicerade omgångar</button><button class="alt" onclick="fetchAtgGame()">Hämta valt omgångs-ID</button><button class="alt" onclick="fetchAtgCalendarDirect()">Prova ATG direkt (experimentellt)</button></div>
 <div id="atgstatus" class="small muted" style="margin-top:10px">Ingen automatisk hämtning gjord ännu.</div>
 <div id="atgchoices" style="margin-top:8px"></div>
 </section>
@@ -50,7 +50,7 @@
 </section>
 <section class="panel" id="historyPanel">
 <h2>Hästarnas historik – Sverige och utlandet</h2>
-<p class="small muted">Historiken undersöks automatiskt när startlistan hämtas: först i startlistans egna data, därefter i ATG:s utökade loppdata när det behövs. Endast faktiska historikrader används. Programmet visar när uppgifter saknas. Komplettera vid behov med JSON.</p>
+<p class="small muted">Historik i en publicerad och tillåten startlista används automatiskt om den finns. ATG:s utökade loppdata används enbart vid ett uttryckligt manuellt direkttest. Saknade historikuppgifter visas som saknade; komplettera via egen rättighetskontrollerad JSON.</p>
 <div class="row">
 <button onclick="fetchAllHorseHistory()">Försök uppdatera historiken igen</button>
 <button class="alt" onclick="downloadHistoryCSV()">Exportera all hästhistorik (CSV)</button>
@@ -72,7 +72,7 @@ let gameType="V85",N=GAME_CONFIG.V85.legs;
 let races=Array.from({length:N},()=>({horses:[]}));
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function preferredGameType(date){return String(date||"")>="2026-11-28"?"V75":"V85";}
+function preferredGameType(){return gameType;} // Spelform väljs från verifierad omgång, inte datumgräns.
 function enforceBudget(){const raw=Number($("budget").value);const value=Number.isFinite(raw)&&raw>0?Math.min(raw,300):300;$("budget").value=value;return value;}
 function configureGame(type,reset=false){
  if(!GAME_CONFIG[type])throw new Error("Okänd spelform: "+type);
@@ -225,26 +225,59 @@ function collectSupportedGames(calendar){
  walk(calendar);return {found,types:[...types].sort()};
 }
 async function getAtgJSON(path){
+  if(!window._experimentalAtg){
+   if(!/^\/games\//.test(path))throw new Error("Utökad ATG-hämtning är inte aktiverad. Importera verifierade historikuppgifter.");
+   const id=decodeURIComponent(path.slice("/games/".length));
+   if(!/^V(?:75|85)[A-Za-z0-9_-]{1,90}$/.test(id))throw new Error("Omgångs-ID har ogiltigt format");
+   return await fetchSameOriginJSON("./data/games/"+encodeURIComponent(id)+".json");
+  }
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
  try{const r=await fetch(ATG+path,{headers:{"Accept":"application/json"},signal:controller.signal});if(!r.ok)throw new Error("ATG svarade HTTP "+r.status);return await r.json();}
  finally{clearTimeout(timer);}
 }
+async function fetchSameOriginJSON(url){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+ try{
+  const response=await fetch(url,{cache:"no-store",headers:{"Accept":"application/json"},signal:controller.signal});
+  if(!response.ok)throw new Error("Publicerad data saknas (HTTP "+response.status+")");
+  return await response.json();
+ }finally{clearTimeout(timer);}
+}
+function selectPublishedGame(found,date,source){
+ window._gameCandidates=found;
+ $("atgchoices").innerHTML=found.map((x,i)=>'<p><button class="alt" data-game-index="'+i+'">'+esc(x.type)+" · "+esc(x.id)+"</button>"+(x.source_url?'<span class="small"> <a href="'+esc(x.source_url)+'" target="_blank" rel="noopener noreferrer">Källa</a> · <a href="'+esc(x.permission_url)+'" target="_blank" rel="noopener noreferrer">Användningsrätt</a></span>':"")+"</p>").join("");
+ $("atgchoices").querySelectorAll("button").forEach((el,i)=>{el.onclick=()=>selectAtgGame(found[i].id);});
+ const selection=$("gameType").value;
+ const candidates=selection==="auto"?found:found.filter(x=>x.type===selection);
+ const pick=candidates[0]; // Ingen datumgissning. Om flera omgångar finns väljer användaren via knapparna.
+ if(!pick){
+  $("atgstatus").textContent="Ingen färsk (kontrollerad senaste 72 timmarna) "+(selection==="auto"?"V75/V85":selection)+"-omgång är verifierad för "+date+" i "+source+". Använd CSV/JSON-import eller välj en annan dag.";
+  return null;
+ }
+ window._selectedGameType=pick.type;
+ $("atgstatus").textContent=(window._experimentalAtg?"Experimentellt direktresultat (rättigheter och aktualitet ej verifierade): ":"Verifierad publicerad kalender: ")+found.length+" omgång(ar) den "+date+". Valt "+pick.type+" · "+pick.id+(window._experimentalAtg?"":". Källa verifierad "+pick.verified_at)+".";
+ return pick.id;
+}
 async function fetchAtgCalendar(){
  const date=$("atgdate").value;if(!date){$("atgstatus").textContent="Välj datum först.";return null;}
- $("atgstatus").textContent="Söker tävlingskalender för "+date+"…";
+ window._experimentalAtg=false;
+ $("atgstatus").textContent="Läser verifierad tävlingskalender för "+date+" från GitHub Pages…";
+ try{
+  const manifest=await fetchSameOriginJSON("./data/calendar.json");
+  if(manifest.schema_version!==1||!Array.isArray(manifest.games))throw new Error("Kalenderfilens format är ogiltigt");
+  const found=manifest.games.filter(x=>x.date===date&&["V75","V85"].includes(x.type)&&/^V(?:75|85)[A-Za-z0-9_-]{1,90}$/.test(x.id)&&x.id.startsWith(x.type)&&x.source_url&&x.permission_url&&x.verified_at&&Number.isFinite(Date.parse(x.verified_at))&&(Date.now()-Date.parse(x.verified_at)<72*3600000));
+  return selectPublishedGame(found,date,"GitHub Pages");
+ }catch(e){$("atgstatus").textContent="Verifierad kalender kunde inte läsas: "+e.message+". Importera CSV/JSON som reserv. Direkt ATG-test är frivilligt och kan misslyckas i Safari.";return null;}
+}
+async function fetchAtgCalendarDirect(){
+ const date=$("atgdate").value;if(!date){$("atgstatus").textContent="Välj datum först.";return null;}
+ window._experimentalAtg=true;
+ $("atgstatus").textContent="Testar ATG direkt (ej verifierad för automatiserad hämtning)…";
  try{
   const j=await getAtgJSON("/calendar/day/"+date);window._atgCalendar=j;
-  const {found,types}=collectSupportedGames(j);window._gameCandidates=found;
-  $("atgchoices").innerHTML=found.map((x,i)=>'<p><button class="alt" data-game-index="'+i+'">'+esc(x.type)+" · "+esc(x.id)+"</button></p>").join("");
-  $("atgchoices").querySelectorAll("button").forEach((el,i)=>{el.onclick=()=>selectAtgGame(found[i].id);});
-  const selection=$("gameType").value,preferred=selection==="auto"?preferredGameType(date):selection;
-  const candidates=selection==="auto"?found:found.filter(x=>x.type===selection);
-  const pick=candidates.find(x=>x.type===preferred)||candidates[0];
-  if(!pick){$("atgstatus").textContent="Hittade ingen "+(selection==="auto"?"V75/V85":selection)+" den "+date+". Tillgängliga: "+(types.join(", ")||"inga speltyper identifierade")+". Kontrollera datum.";return null;}
-  window._selectedGameType=pick.type;
-  $("atgstatus").textContent="Hittade "+found.length+" omgång(ar). Valt "+pick.type+" – hämtar startlistan.";
-  return pick.id;
- }catch(e){$("atgstatus").textContent="Kalenderhämtningen misslyckades: "+e.message+". CSV/JSON finns som reserv.";return null;}
+  const {found}=collectSupportedGames(j);
+  return selectPublishedGame(found,date,"ATG:s experimentella direktkoppling");
+ }catch(e){$("atgstatus").textContent="ATG-direktkopplingen fungerade inte i den här webbläsaren ("+e.message+"). Använd publicerade data eller CSV/JSON.";return null;}
 }
 async function selectAtgGame(id){$("atggameid").value=id;window._selectedGameType=window._gameCandidates?.find(x=>x.id===id)?.type||null;await fetchAtgGame();}
 async function startAutoFetch(){
@@ -257,11 +290,11 @@ async function autoFetchGame(){const id=await fetchAtgCalendar();if(id){$("atgga
 function extractGameRaces(j){let a=j?.races||j?.game?.races||j?.game?.legs||j?.legs||[];if(Array.isArray(a))return a;return Object.values(a||{}).filter(x=>x&&typeof x==="object");}
 async function fetchAtgGame(){
  const id=$("atggameid").value.trim();if(!id){$("atgstatus").textContent="Sök datumet först eller ange ett omgångs-ID.";return false;}
- const detected=id.toUpperCase().match(/^V(?:75|85)(?:[_-]|$)/)?.[0]?.slice(0,3)||window._selectedGameType||($("gameType").value==="auto"?preferredGameType($("atgdate").value):$("gameType").value);
+ const detected=id.toUpperCase().match(/^V(?:75|85)(?:[_-]|$)/)?.[0]?.slice(0,3)||window._selectedGameType||($("gameType").value==="auto"?gameType:$("gameType").value);
  const type=GAME_CONFIG[detected]?detected:gameType,expected=GAME_CONFIG[type].legs;
  $("atgstatus").textContent="Hämtar startlista för "+id+"…";
  try{
-  const j=await getAtgJSON("/games/"+encodeURIComponent(id)),legs=extractGameRaces(j);
+   const j=await getAtgJSON("/games/"+encodeURIComponent(id)),legs=extractGameRaces(j);
   if(legs.length!==expected)throw new Error("Omgången innehåller "+legs.length+" avdelningar, men "+type+" kräver "+expected+". Ingen ofullständig omgång lästes in.");
   const oldSameGame=window._currentGameId===id;
   const oldHorses=oldSameGame?new Map(races.flatMap(r=>r.horses).filter(h=>h.horseId).map(h=>[String(h.horseId),h])):new Map();
@@ -277,7 +310,7 @@ async function fetchAtgGame(){
     let bd=pool.betDistribution??st.betDistribution??"";
     if(bd!==""&&Number(bd)>100)bd=Number(bd)/100;
     const shoes=st.shoes||horse.shoes||"",sulky=st.sulky||"",horseId=horse.id||st.horseId||null;
-    const h={horseId,targetDistance:race.distance||null,history:[],num:st.startNumber||st.number||st.postPosition||"",name:horse.name||st.horseName||st.name||"",driverName:[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||st.driverName||"",streak:bd===""?"":Number(bd).toFixed(2),odds:st.finalOdds||st.odds||"",shoes:typeof shoes==="string"?shoes:JSON.stringify(shoes),cart:typeof sulky==="string"?sulky:JSON.stringify(sulky),notes:"Uppgifter från ATG. Kontrollera sena ändringar.",form:5,development:5,driver:5,conditions:5,position:5,equipment:5,reliability:5};
+    const h={horseId,targetDistance:race.distance||null,history:[],num:st.startNumber||st.number||st.postPosition||"",name:horse.name||st.horseName||st.name||"",driverName:[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||st.driverName||"",streak:bd===""?"":Number(bd).toFixed(2),odds:st.finalOdds||st.odds||"",shoes:typeof shoes==="string"?shoes:JSON.stringify(shoes),cart:typeof sulky==="string"?sulky:JSON.stringify(sulky),notes:"Kontrollera källa, utrustningsändringar och sena strykningar före spel.",form:5,development:5,driver:5,conditions:5,position:5,equipment:5,reliability:5};
     mergeCachedHistory(h,cache);
     const previous=horseId&&oldHorses.get(String(horseId));
     if(previous){for(const [key] of keys)h[key]=previous[key]??h[key];h.notes=previous.notes||h.notes;if(previous.history?.length)mergeHorseHistory(h,previous.history,previous.historyHasMore,previous.historySource||"Sparad historik");}
@@ -350,7 +383,8 @@ async function fetchAllHorseHistory(){
  async function checkRace(race,i){
   const base=race.starts||race.starting||race.runners||race.entries||[];
   joinStarts(base,i,"ATG startlista");
-  const raceId=race.id||race.raceId||race.race?.id;
+   if(!window._experimentalAtg){checked++;return;}
+   const raceId=race.id||race.raceId||race.race?.id;
   if(!raceId){errors.push("Avd "+(i+1)+": lopp-ID saknas");checked++;return;}
   try{
    const ext=await getAtgJSON("/races/"+encodeURIComponent(raceId)+"/extended");
