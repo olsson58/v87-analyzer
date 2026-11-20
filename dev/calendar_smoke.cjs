@@ -23,6 +23,7 @@ const dom = id => {
 let payload = {schema_version: 1, status: "unavailable", games: []};
 let gamePayload = null;
 let nextFetchError = null;
+let mockContentType = "application/json";
 const outbound = [];
 const context = vm.createContext({
   document: {getElementById: dom},
@@ -34,9 +35,11 @@ const context = vm.createContext({
       nextFetchError = null;
       throw error;
     }
-    return {ok: true, json: async () => url.includes("/games/") ? gamePayload : payload};
+    return {ok: true, headers: {get: () => mockContentType},
+      json: async () => url.includes("/games/") ? gamePayload : payload};
   },
   AbortController, setTimeout, clearTimeout, Date, String, Number, console,
+  confirm: () => true,
 });
 vm.runInContext(code, context);
 dom("atgdate").value = "2026-11-21";
@@ -50,6 +53,13 @@ async function test() {
   assert.equal(selected, null);
   assert.match(dom("atgstatus").textContent, /Load failed/);
   assert.match(dom("atgstatus").textContent, /CSV\/JSON/);
+
+  // A stale Access login page can return HTTP 200 with HTML. It is not calendar data.
+  mockContentType = "text/html";
+  selected = await vm.runInContext("fetchAtgCalendar()", context);
+  assert.equal(selected, null);
+  assert.match(dom("atgstatus").textContent, /returnerade inte JSON/);
+  mockContentType = "application/json";
 
   selected = await vm.runInContext("fetchAtgCalendar()", context);
   assert.equal(selected, null);
@@ -120,6 +130,27 @@ async function test() {
   });
   assert.equal(vm.runInContext("races[0].horses.length", context), beforeImport + 2);
   assert.equal(vm.runInContext("races[0].horses[races[0].horses.length - 1].odds", context), "8.5");
-  console.log("Safari failure, V75/V85 same-origin loading, 300-kr cap, history and import OK (no remote ATG call)");
+
+  // One own JSON file can hold a full eight-leg start list and past starts.
+  const ownRaces = racesFor(8);
+  ownRaces[0].starts[0].history = [{
+    date: "2025-11-09", country: "NO", track: "Bjerke", place: 1,
+    distance: 2140, source: "Egen källhänvisad fil",
+  }];
+  dom("jsonpaste").value = JSON.stringify({date: "2026-11-21", track: "Solvalla", races: ownRaces});
+  vm.runInContext("importJSON()", context);
+  assert.equal(vm.runInContext("races.length", context), 8);
+  assert.equal(vm.runInContext("races[0].horses[0].history.length", context), 1);
+  assert.equal(vm.runInContext("races[0].horses[0].history[0].country", context), "NO");
+  assert.equal(vm.runInContext("races[0].horses[0].history[0].source", context), "Egen källhänvisad fil");
+  assert.match(dom("importstatus").textContent, /16 hästar, 8 avdelningar, 1 med historik/);
+  dom("jsonpaste").value = JSON.stringify({races: ownRaces.slice(0, 6)});
+  vm.runInContext("importJSON()", context);
+  assert.match(dom("importstatus").textContent, /exakt 7 .*eller 8/);
+  assert.equal(vm.runInContext("races.length", context), 8, "Malformed import must not replace a working round");
+  assert.equal(vm.runInContext("typeof fetchAtgCalendarDirect", context), "undefined");
+  assert(!html.includes("Prova ATG direkt"), "Undocumented ATG action must be removed from UI");
+  assert(outbound.every(url => url.startsWith("./data/")), "No direct ATG request may be made");
+  console.log("Safari error, Access login HTML, same-origin V75/V85, 300-kr cap and private JSON+history import OK");
 }
 test().catch(error => {console.error(error); process.exitCode = 1;});

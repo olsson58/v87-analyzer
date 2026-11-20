@@ -9,7 +9,7 @@ Enligt [ATG:s pressmeddelande den 17 september 2026](https://www.mynewsdesk.com/
 | Område | Källa | Läget för återanvändning |
 | --- | --- | --- |
 | Startlistor, historiska starter SE, kuskar, tränare, skor, vagn | Svensk Travsport | Publikt läsbara uppgifter men uttryckligt upphovsrätts- och databasskydd. **Ingen automatisk kopiering/återpublicering utan tillstånd.** |
-| Spelform, omgångar, streck och odds | ATG | Racinginfo är odokumenterat. Ingen verifierad rätt att samla in och återpublicera. Endast separat, uttryckligt manuellt experiment i appen; inte via Actions. |
+| Spelform, omgångar, streck och odds | ATG | Racinginfo är odokumenterat. [ATG:s villkor från 1 maj 2026](https://assets.ctfassets.net/hkip2osr81id/2xz0S91MO59bAzEpvDSXya/8434b4b49bd3d55fa397aa9bdc0e6db0/ATG_Allma%CC%8C_nna_Villkor_fr.o.m_1_maj_2026.pdf) förbjuder automatiserad kopiering/extraktion från webbplatsen; därför avlägsnades direktknappen. Ingen Actions-hämtning. |
 | Häststarter Norge, Finland, Danmark, Frankrike | Rikstoto, Suomen Hippos/Heppa, Dansk Hestevæddeløb, LeTrot | Intressanta offentliga söksidor för manuell källkontroll; rätt till masshämtning ej fastställd. |
 | Väderprognoser och observationer | SMHI öppna data | CC BY 4.0 SE; dokumenterade API:er, källhänvisning, uppge bearbetningar och undvik onödiga massanrop. Väder är **inte** liktydigt med banunderlag. |
 | Väderprognoser för utländska och svenska banor | MET Norway Locationforecast | CC BY 4.0 med källangivelse. Kräver identifierande User-Agent och API-vänlig cachning; institutet avråder från direkta browseranrop. En kommande Actions-adapter kan använda källan med få uppslag per bana. |
@@ -22,6 +22,7 @@ Enligt [ATG:s pressmeddelande den 17 september 2026](https://www.mynewsdesk.com/
 ### Rättighetskontroll 20 november 2026
 
 - [Svensk Travsports egen sida](https://www.travsport.se/svensk-travsport) anger uttryckligt copyright/databasskydd och förbud mot kopiering av publicerad hästsportinformation. En publikt läsbar startlista är därför **inte** automatiskt en godkänd källa för vår Actions-publicering.
+- [Svensk Travsports uppdateringslogg](https://www.travsport.se/svensk-travsport/om-webbplatsen/aktuella-uppdateringar) bekräftar att start- och resultatlistor kan exporteras manuellt till Excel. Det innebär **inte** automatiskt tillstånd för serverhämtning eller återpublicering. Användaren kan omvandla egna tillåtna utdrag till appens CSV eller JSON för privat analys.
 - [Farsans Travs användarvillkor](https://farsanstrav.se/anvandarvillkor/) tillåter korta citat med källhänvisning, men inte systematisk uttagning utan avtal. [v64startlista.se:s villkor](https://v64startlista.se/anvandarvillkor/) medger personligt bruk, men annan kopiering/återpublicering kräver skriftligt tillstånd. [Travats villkor](https://www.travat.se/anvandarvillkor) begränsar uttryckligen robotar/skrapning utan tillstånd.
 - [Travmaskinens API-sida](https://travmaskinen.se/developers) annonserar betalprodukter för kommande startlistor och historik; prisuppgifter som kontrollerades 20 november 2026 var 1 499 respektive 2 499 kr/månad. Ingen gratis produktlicens eller fri återpubliceringsrätt har verifierats.
 - Utomlands (Norge, Finland, Danmark och Frankrike) har vi ännu inte funnit en uttrycklig öppen återpubliceringslicens för kompletta travstartlistor. **Status: inte verifierad**, vilket inte är samma sak som att sådan licens aldrig kan finnas.
@@ -40,6 +41,7 @@ Fram tills svar finns: behåll GitHub Pages-kalendern tom, använd uttryckligen 
 
 - [Svensk Travsports webbplats: upphovsrätt/databasskydd](https://www.travsport.se/svensk-travsport)
 - [SMHI:s villkor för öppna data](https://www.smhi.se/data/om-smhis-data/villkor-for-anvandning)
+- [ATG:s allmänna villkor från 1 maj 2026, automatiserad extraktion förbjuden](https://assets.ctfassets.net/hkip2osr81id/2xz0S91MO59bAzEpvDSXya/8434b4b49bd3d55fa397aa9bdc0e6db0/ATG_Allma%CC%8C_nna_Villkor_fr.o.m_1_maj_2026.pdf)
 - [MET Norway API – officiella användningsvillkor](https://docs.api.met.no/doc/TermsOfService.html)
 - [MET Norway FAQ om separat godkännande av API-villkor](https://api.met.no/doc/FAQ)
 - [TV4:s allmänna webbplatsvillkor](https://www.tv4.se/artikel/5742a60ffca38f120d00046b/allmanna-anvandarvillkor-for-tv4-s-tjanster)
@@ -54,3 +56,13 @@ Fram tills svar finns: behåll GitHub Pages-kalendern tom, använd uttryckligen 
 5. Browsern visar bara verifierade poster från senaste 72 timmarna; äldre uppgifter blir inte automatiskt "nya" av att en Actions-körning uppdateras.
 
 Denna första version **hämtar inte** tävlingsuppgifter externt från GitHub Actions: det vore för tidigt utan rättighetsklarerad källa.
+
+### Egen privat lokal import
+
+Välj en CSV med kolumnerna `avd;nr;häst;kusk;streck;odds;skor;vagn` eller en JSON med
+`races`-lista av exakt sju (V75) eller åtta (V85) lopp och `starts` per lopp.
+Varje start kan innehålla `horse.name`, `startNumber`, `driverName`,
+`shoes`, `sulky`, samt `history` eller `horse.history`
+med daterade historiska starter. Vid komplett omgång fyller appen automatiskt V75/V85,
+antal avdelningar, historik och ett balanserat förslag upp till 300 kr.
+Det är **inte** en serverkälla, och ingen sådan fil skickas automatiskt till GitHub eller ATG.
