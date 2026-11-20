@@ -6,6 +6,9 @@ const vm = require("node:vm");
 const html = fs.readFileSync("index.html", "utf8");
 let code = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert(code, "Inline script missing");
+assert(html.includes('id="iphone-import-guide"'), "iPhone file-import guide missing");
+assert(html.includes("https://sportapp.travsport.se/start"), "Official Sportappen export route missing");
+assert(html.includes("tolkar ännu inte Excel (.xlsx) eller PDF direkt"), "Unverified Excel/PDF import must not be claimed");
 // Avoid app startup (requires real DOM and localStorage). Exercise real calendar functions.
 code = code.slice(0, code.lastIndexOf("configureGame(preferredGameType("));
 const nodes = new Map();

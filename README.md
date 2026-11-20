@@ -12,6 +12,7 @@ Mål: iPhone-vänlig analys för V75 och V85 med balanserat **ett system på hö
 - Valideringsfel avbryter arbetsflödet och ersätter inte senaste lyckade Pages-publicering.
 - Den tidigare ATG-direktknappen är borttagen: [ATG:s gällande villkor](https://assets.ctfassets.net/hkip2osr81id/2xz0S91MO59bAzEpvDSXya/8434b4b49bd3d55fa397aa9bdc0e6db0/ATG_Allma%CC%8C_nna_Villkor_fr.o.m_1_maj_2026.pdf) förbjuder automatiserad extraktion, och webbläsartestet gav "Load failed".
 - Om användaren har en startlista som får användas lokalt kan en komplett V75/V85-JSON med sju/åtta lopp och valfria historikrader importeras i **ett steg**. Gamla omgången ersätts först efter bekräftelse; ingen uppladdning till ATG sker.
+- En iPhone-guide i importpanelen visar den officiella manuella Excel-exporten från Svensk Travsports Sportapp och vägen via Filer/ChatGPT till befintlig JSON-import. **XLSX/PDF tolkas ännu inte direkt i webbläsaren**; den faktiska exportens kolumner måste kontrolleras innan en importör kan utvecklas och testas. Rätten att vidarebehandla/dela filen måste först klarläggas.
 - Om Cloudflare Access råkar returnera en inloggningssida som HTML i stället för JSON visas ett tydligt felmeddelande.
 
 ### Lokalt kontrollera
