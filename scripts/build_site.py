@@ -95,6 +95,12 @@ def build(root: Path, out: Path) -> dict:
         shutil.rmtree(out)
     (out / "data" / "games").mkdir(parents=True)
     shutil.copy2(root / "index.html", out / "index.html")
+    # Cloudflare Pages reads static response headers from the built asset root.
+    # These headers reduce accidental exposure through caches/indexing; they
+    # are NOT authentication and must be paired with Cloudflare Access.
+    cloudflare_headers = root / "deploy" / "cloudflare" / "_headers"
+    if cloudflare_headers.is_file():
+        shutil.copy2(cloudflare_headers, out / "_headers")
     now = datetime.now(timezone.utc).isoformat()
     manifest = {
         "schema_version": 1,
