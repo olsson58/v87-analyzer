@@ -66,6 +66,25 @@ class CalendarValidationTests(unittest.TestCase):
                 build(root, root)
             self.assertTrue((root / "index.html").is_file())
 
+    def test_private_host_headers_and_only_allowlisted_assets(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "data").mkdir()
+            (root / "data" / "calendar-source.json").write_text(
+                '{"schema_version":1,"games":[]}', encoding="utf-8"
+            )
+            (root / "index.html").write_text("<h1>Test site</h1>", encoding="utf-8")
+            (root / "deploy" / "cloudflare").mkdir(parents=True)
+            (root / "deploy" / "cloudflare" / "_headers").write_text(
+                "/*\n  Cache-Control: private, no-store\n", encoding="utf-8"
+            )
+            (root / ".env").write_text("SECRET_API_KEY=not-for-site", encoding="utf-8")
+            out = root / "site"
+            build(root, out)
+            self.assertIn("no-store", (out / "_headers").read_text(encoding="utf-8"))
+            self.assertFalse((out / ".env").exists())
+            self.assertFalse((out / "data" / "calendar-source.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
