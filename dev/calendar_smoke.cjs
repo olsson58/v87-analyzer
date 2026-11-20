@@ -15,7 +15,8 @@ const dom = id => {
     textContent: "",
     innerHTML: "",
     querySelectorAll: () => [],
-    addEventListener: () => {},
+    eventHandlers: {},
+    addEventListener(event, callback) {this.eventHandlers[event] = callback;},
   });
   return nodes.get(id);
 };
@@ -61,6 +62,15 @@ async function test() {
   `, context);
   assert.equal(provenance, "Min tillåtna källa");
   assert(outbound.every(url => url.startsWith("./data/calendar.json")));
-  console.log("Calendar and history functions OK (no remote ATG call)");
+  vm.runInContext("render=()=>{};renderHistoryOverview=()=>{};save=()=>{};", context);
+  dom("jsonpaste").value = JSON.stringify([{avd:1,number:1,name:"Provrunner",driver:"Provgubbe"}]);
+  vm.runInContext("importJSON(); importJSON()", context);
+  assert.equal(vm.runInContext("races[0].horses.length", context), 1, "Repeated JSON should not duplicate horses");
+  dom("csvfile").eventHandlers.change && await dom("csvfile").eventHandlers.change({
+    target: {files: [{text: async () => "avd;nr;häst;kusk;streck;odds;skor;vagn\n1;2;Provrunner 2;Kusk;12;8,5;barfota;vanlig"}]},
+  });
+  assert.equal(vm.runInContext("races[0].horses.length", context), 2);
+  assert.equal(vm.runInContext("races[0].horses[1].odds", context), "8.5");
+  console.log("Calendar, history and import functions OK (no remote ATG call)");
 }
 test().catch(error => {console.error(error); process.exitCode = 1;});
