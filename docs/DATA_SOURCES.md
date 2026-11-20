@@ -1,6 +1,10 @@
 # Datakällor – Trav Analyzer
 
-Senast manuellt granskad: 2026-11-19. Detta är en rättighets- och tekniköversikt, inte ett påstående om att automatiska anslutningar är driftsatta.
+Senast manuellt granskad: 2026-11-20. Detta är en rättighets- och tekniköversikt, inte ett påstående om att automatiska anslutningar är driftsatta.
+
+## Spelformer efter november 2026
+
+Enligt [ATG:s pressmeddelande den 17 september 2026](https://www.mynewsdesk.com/se/atg/pressreleases/v75-r-tillbaka-paa-loerdagarna-premiaer-28-november-3467622) återkommer V75 lördagen **28 november 2026**, med **60 öre/rad**. V85 pausas då tills vidare. [ATG:s kundservice om V85](https://atg-extern.kb.kundo.se/guide/information-angaende-v85) anger **50 öre/rad** för V85. Datumet för en omgång räcker inte som bevis på spelform: läs V75/V85 från verifierad omgångsinformation och kontrollera alltid radpris mot aktuell spelprodukt före inlämning. Den nuvarande appversionen beräknar V75 med 60 öre/rad, och kan därför överskatta kostnaden för äldre V75-omgångar.
 
 | Område | Källa | Läget för återanvändning |
 | --- | --- | --- |
