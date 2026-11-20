@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - index.html
+      - dev/calendar_smoke.cjs
       - data/**
       - scripts/**
       - tests/**
@@ -31,6 +32,8 @@ jobs:
           python-version: "3.12"
       - name: Test calendar validation
         run: python -m unittest discover -s tests -v
+      - name: Test Safari failure and V75/V85 browser logic
+        run: node dev/calendar_smoke.cjs
       - name: Build public site
         run: python scripts/build_site.py --output site
       - name: Configure GitHub Pages
