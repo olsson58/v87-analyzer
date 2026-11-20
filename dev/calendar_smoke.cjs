@@ -50,7 +50,17 @@ async function test() {
   selected = await vm.runInContext("fetchAtgCalendar()", context);
   assert.equal(selected, "V85_TEST1");
   assert.match(dom("atgstatus").textContent, /Verifierad publicerad kalender/);
+  const provenance = vm.runInContext(`
+    (() => {
+      const horse = {history: []};
+      mergeHorseHistory(horse, [{
+        date: "2026-11-15", country: "SE", place: 2, source: "Min tillåtna källa"
+      }], false, "Verifierad publicerad startlista");
+      return horse.history[0].source;
+    })()
+  `, context);
+  assert.equal(provenance, "Min tillåtna källa");
   assert(outbound.every(url => url.startsWith("./data/calendar.json")));
-  console.log("Calendar functions OK (no remote ATG call)");
+  console.log("Calendar and history functions OK (no remote ATG call)");
 }
 test().catch(error => {console.error(error); process.exitCode = 1;});

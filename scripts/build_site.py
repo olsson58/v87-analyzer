@@ -87,6 +87,8 @@ def validate(source: dict) -> list[dict]:
 
 
 def build(root: Path, out: Path) -> dict:
+    if out.resolve() == root.resolve() or out.resolve() == Path("/") or out.name != "site":
+        raise ValueError("Utdatakatalogen måste heta site och får inte vara projektroten")
     source = json.loads((root / "data" / "calendar-source.json").read_text(encoding="utf-8"))
     validated = validate(source)
     if out.exists():

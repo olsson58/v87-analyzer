@@ -56,6 +56,16 @@ class CalendarValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "omgångsdatum"):
             validate({"schema_version": 1, "games": [item]})
 
+    def test_refuses_build_over_project_root(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "data").mkdir()
+            (root / "data" / "calendar-source.json").write_text('{"schema_version":1,"games":[]}', encoding="utf-8")
+            (root / "index.html").write_text("<h1>Bevara originalet</h1>", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Utdatakatalogen"):
+                build(root, root)
+            self.assertTrue((root / "index.html").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -356,7 +356,7 @@ function extractHistoryRecords(st){
 function mergeHorseHistory(h,records,hasMore=false,source="ATG extended"){
  h.history=Array.isArray(h.history)?h.history:[];
  const map=new Map(h.history.map(x=>[`${x.date}|${x.country}|${x.track}|${x.distance}|${x.place}|${x.kmTime}`,x]));
- records.map(normHistoryRecord).forEach(x=>{x.source=source;const k=`${x.date}|${x.country}|${x.track}|${x.distance}|${x.place}|${x.kmTime}`;map.set(k,x);});
+ records.map(normHistoryRecord).forEach(x=>{x.source=x.source&&x.source!=="Importerad"?x.source:source;const k=`${x.date}|${x.country}|${x.track}|${x.distance}|${x.place}|${x.kmTime}`;map.set(k,x);});
  h.history=[...map.values()].sort((a,b)=>String(b.date).localeCompare(String(a.date)));h.historyHasMore=h.historyHasMore||hasMore;
 }
 function renderHistoryOverview(){
@@ -365,10 +365,14 @@ function renderHistoryOverview(){
 }
 async function fetchAllHorseHistory(){
  const legs=extractGameRaces(window._atgGame);
- if(!legs.length){$("historystatus").textContent="Hämta startlistan från ATG först. Importerad historik ligger kvar men kan inte kontrolleras automatiskt utan omgångsdata.";return;}
+ if(!legs.length){
+  const withHistory=races.flatMap(r=>r.horses).filter(h=>historyStats(h).count).length;
+  $("historystatus").textContent="Ingen verifierad omgångsdata är inläst. "+withHistory+" hästar har redan sparad historik, som finns kvar. För automatisk komplettering krävs en tillåten datakälla. Du kan importera egen JSON-historik nedan.";
+  return;
+ }
  const raceDate=$("date").value||$("atgdate").value,matched=new Set(),errors=[];
  let checked=0,extended=0,imported=0;
- $("historystatus").textContent="Söker verkliga historikrader i startlista och utökad loppdata…";
+ $("historystatus").textContent="Kontrollerar befintliga historikrader"+(window._experimentalAtg?" och prövar utökade ATG-data…":" från publicerad startlista…");
  const validPast=rows=>rows.filter(x=>{const d=x.date||x.startDate||x.race?.date||x.event?.date;return d&&(!raceDate||String(d).slice(0,10)<raceDate);});
  function joinStarts(starts,i,source){
   if(!Array.isArray(starts))return;
@@ -382,7 +386,7 @@ async function fetchAllHorseHistory(){
  }
  async function checkRace(race,i){
   const base=race.starts||race.starting||race.runners||race.entries||[];
-  joinStarts(base,i,"ATG startlista");
+  joinStarts(base,i,window._experimentalAtg?"ATG startlista":"Verifierad publicerad startlista");
    if(!window._experimentalAtg){checked++;return;}
    const raceId=race.id||race.raceId||race.race?.id;
   if(!raceId){errors.push("Avd "+(i+1)+": lopp-ID saknas");checked++;return;}
@@ -401,7 +405,7 @@ async function fetchAllHorseHistory(){
  render();renderHistoryOverview();save(true);
  const horses=races.flatMap(r=>r.horses),withHistory=horses.filter(h=>historyStats(h).count).length;
  const details=errors.length?" "+errors.join("; "):"";
- $("historystatus").textContent="Historikkontroll klar: "+withHistory+"/"+horses.length+" hästar med faktiska historikrader, "+extended+"/"+Math.min(N,legs.length)+" utökade loppdata-svar. "+(withHistory<horses.length?"Saknade historikrader betyder inte noll starter. ":"")+details;
+ $("historystatus").textContent="Historikkontroll klar: "+withHistory+"/"+horses.length+" hästar med faktiska historikrader. "+(window._experimentalAtg?extended+"/"+Math.min(N,legs.length)+" utökade ATG-svar. ":"Inga externa historikkällor anropades. ")+(withHistory<horses.length?"Saknade historikrader betyder inte noll starter. ":"")+details;
 }
 function importHorseHistoryJSON(){
  try{
