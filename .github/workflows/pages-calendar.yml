@@ -7,6 +7,7 @@ on:
     paths:
       - index.html
       - dev/calendar_smoke.cjs
+      - dev/risk_review_smoke.cjs
       - data/**
       - scripts/**
       - tests/**
@@ -34,6 +35,8 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Test Safari failure and V75/V85 browser logic
         run: node dev/calendar_smoke.cjs
+      - name: Test exclusion audit, pre-race export and exact budget
+        run: node dev/risk_review_smoke.cjs
       - name: Build public site
         run: python scripts/build_site.py --output site
       - name: Save reviewable test build (not published)

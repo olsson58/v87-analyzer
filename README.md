@@ -2,6 +2,15 @@
 
 Mål: iPhone-vänlig analys för V75 och V85 med balanserat **ett system på högst 300 kr**.
 
+## Nytt i testversion 3.1: kontrollera alla bortval
+
+- **Skrällgranskning** visar varje häst som inte kom med i systemet. Låg streckprocent, hög preliminär modellandel, kort avstånd till förstahästen och saknad/ofullständig historik kan utlösa manuella kontrollflaggor. Inga varningsflaggor är bevisad spelvinst eller automatisk kupongändring.
+- **Förhandsprognos i JSON** exporterar vilka hästar som valts bort och varför, tillsammans med aktuella inmatade streck, historik, beräkning, tidsstämpel och kostnad. Resultatfältet är tomt innan utfall verifierats.
+- **Balanserat radantal** räknas fram över hela kupongen. När hästantalet tillåter hittar appen 600 V85-rader × 0,50 kr respektive 500 V75-rader × 0,60 kr = **exakt 300 kr**. Annars visas faktisk lägre kostnad. Endast ett system skapas.
+- Länkar till öppna delar av **Travradarn** och **V85Modellen** hjälper manuell kontroll utan betalning, kopiering från skyddade API:er eller otestade integrationer.
+
+Se [kriterier, begränsningar och förhandsprotokoll](docs/RISK_REVIEW.md). Ingen verklig historisk kalibrering eller automatisk resultatkoppling har ännu genomförts.
+
 ## Safari-kalender: första säkra steg
 
 - `index.html` läser `./data/calendar.json` från samma webbplats som användaren öppnar (GitHub Pages eller Cloudflare Pages). Eventuella tävlingsuppgifter måste ha rättighetskontrollerats.
@@ -31,6 +40,7 @@ Mål: iPhone-vänlig analys för V75 och V85 med balanserat **ett system på hö
 ```bash
 python -m unittest discover -s tests -v
 node dev/calendar_smoke.cjs
+node dev/risk_review_smoke.cjs
 python scripts/build_site.py --output site
 python -m http.server 8000 --directory site
 ```
@@ -39,4 +49,4 @@ python -m http.server 8000 --directory site
 
 **Obs:** Publicering ska inte aktiveras på `main` förrän Pages-inställningen kontrollerats, arbetsflödet provats och användaren godkänt produktionsändringen. Befintlig `main` är orörd av detta förslag.
 
-Se [Datakällor](docs/DATA_SOURCES.md) och [Expertanalys](docs/EXPERT_ANALYSIS.md).
+Se [Datakällor](docs/DATA_SOURCES.md), [Skrällgranskning](docs/RISK_REVIEW.md) och [Expertanalys](docs/EXPERT_ANALYSIS.md).
