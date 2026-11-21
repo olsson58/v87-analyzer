@@ -49,4 +49,4 @@ python -m http.server 8000 --directory site
 
 **Obs:** Publicering ska inte aktiveras på `main` förrän Pages-inställningen kontrollerats, arbetsflödet provats och användaren godkänt produktionsändringen. Befintlig `main` är orörd av detta förslag.
 
-Se [Datakällor](docs/DATA_SOURCES.md), [Skrällgranskning](docs/RISK_REVIEW.md) och [Expertanalys](docs/EXPERT_ANALYSIS.md).
+Se [Datakällor](docs/DATA_SOURCES.md), [Skrällgranskning](docs/RISK_REVIEW.md), [Internationella metodreferenser](docs/INTERNATIONAL_METHODS.md) och [Expertanalys](docs/EXPERT_ANALYSIS.md).
