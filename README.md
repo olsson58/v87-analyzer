@@ -6,6 +6,7 @@ Mål: iPhone-vänlig analys för V75 och V85 med balanserat **ett system på hö
 
 - **Skrällgranskning** visar varje häst som inte kom med i systemet. Låg streckprocent, hög preliminär modellandel, kort avstånd till förstahästen och saknad/ofullständig historik kan utlösa manuella kontrollflaggor. Inga varningsflaggor är bevisad spelvinst eller automatisk kupongändring.
 - **Förhandsprognos i JSON** exporterar vilka hästar som valts bort och varför, tillsammans med aktuella inmatade streck, historik, beräkning, tidsstämpel och kostnad. Resultatfältet är tomt innan utfall verifierats.
+- **Säkrare hästmatchning (3.2, testversion):** ett angivet häst-ID får inte falla tillbaka till en osäker namnträff; dubletter, kollisioner i normaliserade namn och ID-täckning redovisas. Upprepad importerad historik räknas inte som nya starter.
 - **Balanserat radantal** räknas fram över hela kupongen. När hästantalet tillåter hittar appen 600 V85-rader × 0,50 kr respektive 500 V75-rader × 0,60 kr = **exakt 300 kr**. Annars visas faktisk lägre kostnad. Endast ett system skapas.
 - Länkar till öppna delar av **Travradarn** och **V85Modellen** hjälper manuell kontroll utan betalning, kopiering från skyddade API:er eller otestade integrationer.
 

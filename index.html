@@ -161,7 +161,7 @@ function renderRiskReview(){const target=$("riskreview");if(!target)return;
  '<p class="small muted">*Modellandel = normaliserad relativ poäng från manuella betyg och eventuell importerad historik. Inte validerad vinstsannolikhet. Kända och okända streckuppgifter särredovisas. Förslag på kontroller: senaste 5–10 starter, land, startmetod, distans, spår, kusk, skor/vagn, strykningar och värmning.</p>';
 }
 function makeForecastSnapshot(){const counts=races.map(r=>r.horses.filter(h=>h.selected).length),rows=counts.reduce((a,b)=>a*b,1),unit=GAME_CONFIG[gameType].unit;
- return {schemaVersion:1,modelVersion:"3.1-exclusion-audit",createdAt:new Date().toISOString(),forecastKind:"unverified_timestamped_snapshot",verifiedResult:null,gameType,date:$("date").value||null,historyCutoffDate:historyCutoff(),historyDateCheck:historyCutoff()?"excluded_undated_and_on_or_after":"not_possible_without_round_date",track:$("track").value||null,gameId:$("atggameid").value||null,origin:window._localImport?"user_imported":"local_or_published",sourceVerification:"check_import_and_permission_separately",budgetKr:enforceBudget(),unitPriceKr:unit,selectionCounts:counts,rows,costKr:Math.round(rows*unit*100)/100,modelNotice:"Relative score shares are not calibrated win probabilities",excludedAudit:reviewExcluded(),legs:races.map((r,i)=>({leg:i+1,horses:rank(i).map(h=>({horseId:h.horseId||null,num:h.num,name:h.name,selected:!!r.horses[h.j].selected,modelScore:h.s,modelSharePct:h.p,streakPct:Number.isFinite(h.edge)?Number(h.streak):null,edgePercentagePoints:h.edge,historyCount:historyStats(h).count,historyExcludedByDate:historyStats(h).excludedByDate,historyIncomplete:historyStats(h).hasMore,history:Array.isArray(h.history)?h.history:[],sourceNotes:h.notes||null}))}))};
+ return {schemaVersion:1,modelVersion:"3.2-identity-audit",createdAt:new Date().toISOString(),forecastKind:"unverified_timestamped_snapshot",verifiedResult:null,gameType,date:$("date").value||null,historyCutoffDate:historyCutoff(),historyDateCheck:historyCutoff()?"excluded_undated_and_on_or_after":"not_possible_without_round_date",historyIdentity:historyIdentityDiagnostics(),track:$("track").value||null,gameId:$("atggameid").value||null,origin:window._localImport?"user_imported":"local_or_published",sourceVerification:"check_import_and_permission_separately",budgetKr:enforceBudget(),unitPriceKr:unit,selectionCounts:counts,rows,costKr:Math.round(rows*unit*100)/100,modelNotice:"Relative score shares are not calibrated win probabilities",excludedAudit:reviewExcluded(),legs:races.map((r,i)=>({leg:i+1,horses:rank(i).map(h=>({horseId:h.horseId||null,num:h.num,name:h.name,selected:!!r.horses[h.j].selected,modelScore:h.s,modelSharePct:h.p,streakPct:Number.isFinite(h.edge)?Number(h.streak):null,edgePercentagePoints:h.edge,historyCount:historyStats(h).count,historyExcludedByDate:historyStats(h).excludedByDate,historyIncomplete:historyStats(h).hasMore,history:Array.isArray(h.history)?h.history:[],sourceNotes:h.notes||null}))}))};
 }
 function downloadForecastSnapshot(){if(races.some(r=>!r.horses.length||!r.horses.some(h=>h.selected))){alert("Ladda alla avdelningar och välj minst en häst per avdelning innan prognosen sparas.");return;}if(!historyCutoff()){alert("Ange omgångsdatum först, så att senare historik kan uteslutas ur förhandsmodellen.");return;}
  const snapshot=makeForecastSnapshot(),blob=new Blob([JSON.stringify(snapshot,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`${gameType}-forhandsprognos-${$("date").value||"odaterad"}.json`;a.click();URL.revokeObjectURL(url);
@@ -264,6 +264,12 @@ function importRoundJSON(parsed){
    return h;
   })};
  });
+ const importedIds=new Set();
+ for(const r of nextRaces)for(const h of r.horses){
+  const id=h.horseId===null||h.horseId===undefined?"":String(h.horseId).trim();
+  if(id&&importedIds.has(id))throw new Error("Samma häst-ID förekommer flera gånger i omgången: "+id+". Kontrollera startlistan innan import.");
+  if(id)importedIds.add(id);
+ }
  if(races.some(r=>r.horses.length)&&!confirm("Ersätta den öppna omgången med den importerade startlistan? Sparad hästhistorik behålls."))return true;
  configureGame(type,true);
  races=nextRaces;window._atgGame=parsed;window._localImport=true;window._experimentalAtg=false;
@@ -433,16 +439,45 @@ function currentHorseMatch(horse,legIndex=null,startNumber=null){
  const id=horse?.id??horse?.horseId??horse?.horse?.id??null;
  const name=normName(horse?.name||horse?.horseName||horse?.horse?.name||"");
  const all=races.flatMap((r,i)=>r.horses.map(h=>({h,i})));
- if(id){const byId=all.find(x=>x.h.horseId&&String(x.h.horseId)===String(id));if(byId)return byId.h;}
+ if(id!==null&&String(id).trim()!==""){
+  const byId=all.filter(x=>x.h.horseId!==null&&x.h.horseId!==undefined&&String(x.h.horseId)===String(id));
+  // Never resolve duplicate IDs by taking the first result, and never silently
+  // replace a supplied but unknown stable ID with a similarly named horse.
+  if(byId.length!==1){
+   if(byId.length>1)return null;
+   if(legIndex!==null&&legIndex>=0&&legIndex<races.length&&startNumber!==null&&name){
+    const candidates=races[legIndex].horses.filter(h=>!h.horseId&&String(h.num)===String(startNumber)&&normName(h.name)===name);
+    return candidates.length===1?candidates[0]:null;
+   }
+   return null;
+  }
+  if(name&&normName(byId[0].h.name)!==name)return null;
+  if(legIndex!==null&&legIndex>=0&&legIndex<races.length&&byId[0].i!==legIndex)return null;
+  if(startNumber!==null&&startNumber!==undefined&&String(byId[0].h.num)!==String(startNumber))return null;
+  return byId[0].h;
+ }
  if(legIndex!==null&&legIndex>=0&&legIndex<races.length){
   const list=races[legIndex].horses;
-  const byNumber=startNumber!==null&&startNumber!==undefined?list.find(h=>String(h.num)===String(startNumber)):null;
-  if(byNumber&&(!name||normName(byNumber.name)===name))return byNumber;
+  const byNumber=startNumber!==null&&startNumber!==undefined?list.filter(h=>String(h.num)===String(startNumber)&&(!name||normName(h.name)===name)):[];
+  if(byNumber.length===1)return byNumber[0];
+  if(byNumber.length>1)return null;
   const inLeg=list.filter(h=>name&&normName(h.name)===name);
   if(inLeg.length===1)return inLeg[0];
+  if(inLeg.length>1)return null;
  }
  const nameMatches=all.filter(x=>name&&normName(x.h.name)===name);
  return nameMatches.length===1?nameMatches[0].h:null;
+}
+function historyIdentityDiagnostics(){
+ const all=races.flatMap((r,i)=>r.horses.map(h=>({h,leg:i+1}))),ids=new Map(),names=new Map();
+ for(const x of all){
+  const id=x.h.horseId===null||x.h.horseId===undefined?"":String(x.h.horseId).trim();
+  if(id)(ids.get(id)||ids.set(id,[]).get(id)).push(x);
+  const name=normName(x.h.name);if(name)(names.get(name)||names.set(name,[]).get(name)).push(x);
+ }
+ const duplicateIds=[...ids].filter(([,a])=>a.length>1).map(([id,a])=>({id,horses:a.map(x=>`${x.leg}:${x.h.num} ${x.h.name}`)}));
+ const ambiguousNames=[...names].filter(([,a])=>a.length>1).map(([name,a])=>({name,horses:a.map(x=>`${x.leg}:${x.h.num} ${x.h.name}`)}));
+ return {total:all.length,withId:all.filter(x=>x.h.horseId!==null&&x.h.horseId!==undefined&&String(x.h.horseId).trim()!=="").length,duplicateIds,ambiguousNames,excludedDateRecords:all.reduce((n,x)=>n+excludedHistoryCount(x.h),0)};
 }
 function extractHistoryRecords(st){
  const h=st?.horse||{},res=st?.results||st?.result||{},hres=h.results||h.result||{};
@@ -458,8 +493,11 @@ function mergeHorseHistory(h,records,hasMore=false,source="ATG extended"){
  h.history=[...map.values()].sort((a,b)=>String(b.date).localeCompare(String(a.date)));h.historyHasMore=h.historyHasMore||hasMore;
 }
 function renderHistoryOverview(){
- const all=races.flatMap(r=>r.horses),withHistory=all.filter(h=>historyStats(h).count),starts=withHistory.reduce((n,h)=>n+historyStats(h).count,0),foreign=withHistory.reduce((n,h)=>n+historyStats(h).foreign,0),partial=withHistory.filter(h=>h.historyHasMore).length;const byCountry={};withHistory.forEach(h=>countryStats(h).forEach(x=>{const z=byCountry[x.country]??={starts:0,wins:0,top3:0};z.starts+=x.count;z.wins+=x.wins;z.top3+=x.top3;}));const countryRows=Object.entries(byCountry).sort((a,b)=>b[1].starts-a[1].starts);
- $("historyoverview").innerHTML=`<div class="grid"><div><label>Hästar i omgången</label><b>${all.length}</b></div><div><label>Hästar med historik</label><b>${withHistory.length}</b></div><div><label>Importerade historiska starter</label><b>${starts}</b></div><div><label>Utländska starter</label><b>${foreign}</b></div></div>${countryRows.length?`<h3>Historikens länder – hela omgången</h3><div class="small" style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Land</th><th>Starter</th><th>Segrar</th><th>Topp 3</th></tr></thead><tbody>${countryRows.map(([c,v])=>`<tr><td>${esc(c)}</td><td>${v.starts}</td><td>${v.wins}</td><td>${v.top3}</td></tr>`).join('')}</tbody></table></div>`:''}<p class="small muted">${partial?partial+' hästar har markering om att fler historikrader kan finnas. ':''}Landssiffrorna summerar bara importerade och identifierade resultat. Okända landkoder visas separat; hästar utan historik är inte bedömda som hästar med noll starter.</p>`;
+ const all=races.flatMap(r=>r.horses),identity=historyIdentityDiagnostics(),withHistory=all.filter(h=>historyStats(h).count),starts=withHistory.reduce((n,h)=>n+historyStats(h).count,0),foreign=withHistory.reduce((n,h)=>n+historyStats(h).foreign,0),partial=withHistory.filter(h=>h.historyHasMore).length;
+ const byCountry={};withHistory.forEach(h=>countryStats(h).forEach(x=>{const z=byCountry[x.country]??={starts:0,wins:0,top3:0};z.starts+=x.count;z.wins+=x.wins;z.top3+=x.top3;}));const countryRows=Object.entries(byCountry).sort((a,b)=>b[1].starts-a[1].starts);
+ const duplicateWarning=identity.duplicateIds.length?`<p class="warn"><b>Konflikt: ${identity.duplicateIds.length} häst-ID förekommer mer än en gång.</b> Ingen automatisk ID-matchning sker för dessa: ${identity.duplicateIds.slice(0,8).map(x=>esc(x.id)+" ("+esc(x.horses.join(" / "))+")").join("; ")}. Kontrollera källfilen.</p>`:"";
+ const nameWarning=identity.ambiguousNames.length?`<p class="small muted">${identity.ambiguousNames.length} normaliserade namn förekommer på flera starthästar (t.ex. ${identity.ambiguousNames.slice(0,5).map(x=>esc(x.horses.join(" / "))).join("; ")}). Sådana namn matchas inte ensamma; använd stabilt häst-ID eller en entydig avdelning/startnummer-kombination.</p>`:"";
+ $("historyoverview").innerHTML=`<div class="grid"><div><label>Hästar i omgången</label><b>${all.length}</b></div><div><label>Hästar med historik före loppet</label><b>${withHistory.length}</b></div><div><label>Inräknade historiska starter</label><b>${starts}</b></div><div><label>Utländska starter</label><b>${foreign}</b></div><div><label>Hästar med stabilt ID</label><b>${identity.withId}/${identity.total}${identity.total?' ('+(identity.withId/identity.total*100).toFixed(0)+' %)':''}</b></div><div><label>Senare/odaterade historikposter</label><b>${identity.excludedDateRecords} uteslutna</b></div></div>${duplicateWarning}${nameWarning}${countryRows.length?`<h3>Historikens länder – hela omgången</h3><div class="small" style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Land</th><th>Starter</th><th>Segrar</th><th>Topp 3</th></tr></thead><tbody>${countryRows.map(([c,v])=>`<tr><td>${esc(c)}</td><td>${v.starts}</td><td>${v.wins}</td><td>${v.top3}</td></tr>`).join('')}</tbody></table></div>`:''}<p class="small muted">${partial?partial+' hästar har markering om att fler historikrader kan finnas. ':''}Landssiffrorna summerar bara importerade och identifierade resultat. Okända landkoder visas separat; hästar utan historik är inte bedömda som hästar med noll starter.</p>`;
 }
 async function fetchAllHorseHistory(){
  const legs=extractGameRaces(window._atgGame);
@@ -498,15 +536,30 @@ async function fetchAllHorseHistory(){
 }
 function importHorseHistoryJSON(){
  try{
-  const data=JSON.parse($("historyJSON").value.trim());const groups=Array.isArray(data)?data:(data.horses||[]);let added=0,unmatched=[];
+  const data=JSON.parse($("historyJSON").value.trim());const groups=Array.isArray(data)?data:(data.horses||[]);let added=0,duplicates=0,matchedGroups=0,matchedById=0,unmatched=[];
+  if(!Array.isArray(groups))throw new Error("Historiken måste innehålla en lista med hästar.");
+  // Validate the whole batch before modifying a single horse, so malformed
+  // JSON cannot leave a partially imported history behind.
+  for(const [i,g] of groups.entries()){
+   if(!g||typeof g!=="object"||Array.isArray(g))throw new Error("Ogiltig hästgrupp på rad "+(i+1));
+   const starts=Array.isArray(g.starts)?g.starts:(Array.isArray(g.history)?g.history:[g]);
+   if(starts.some(x=>!x||typeof x!=="object"||Array.isArray(x)))throw new Error("Ogiltig historikpost för hästgrupp "+(i+1));
+  }
   groups.forEach(g=>{
    const starts=Array.isArray(g.starts)?g.starts:(Array.isArray(g.history)?g.history:[g]);
-   let target=null;if(g.avd&&g.num){const r=races[Number(g.avd)-1];target=r?.horses.find(h=>String(h.num)===String(g.num)&&(!g.horseName||normName(h.name)===normName(g.horseName)));}
-   if(!target)target=currentHorseMatch({id:g.horseId||g.horse?.id,name:g.horseName||g.name||g.horse?.name});
-   if(!target){unmatched.push(g.horseName||g.name||g.horseId||"Okänd häst");return;}
-   mergeHorseHistory(target,starts,!!g.hasMoreRecords,g.source||"Egen komplettering");added+=starts.length;
+   const id=g.horseId??g.horse?.id??g.id??null,name=g.horseName||g.name||g.horse?.name||"";
+   const legIndex=g.avd!==undefined&&g.avd!==null?Number(g.avd)-1:null;
+   const startNumber=g.num??g.startNumber??null;
+   const target=currentHorseMatch({id,name},legIndex,startNumber);
+   if(!target){unmatched.push(name||id||"Okänd häst");return;}
+   if(id!==null&&String(id).trim()&&!target.horseId)target.horseId=id;
+   if(id!==null&&String(id).trim())matchedById++;
+   matchedGroups++;
+   const before=Array.isArray(target.history)?target.history.length:0;
+   mergeHorseHistory(target,starts,!!g.hasMoreRecords,g.source||"Egen komplettering");
+   const unique=Math.max(0,target.history.length-before);added+=unique;duplicates+=Math.max(0,starts.length-unique);
   });
-  render();renderHistoryOverview();save(true);$("historystatus").textContent=`Importerade ${added} historikrader. ${unmatched.length?`Kunde inte koppla ${unmatched.length} häst(ar): ${unmatched.join(', ')}. Kontrollera häst-ID eller namn.`:'Alla importerade hästar kopplades.'}`;
+  render();renderHistoryOverview();save(true);$("historystatus").textContent=`Historikimport: ${matchedGroups}/${groups.length} hästar matchade (${matchedById} med angivet ID), ${added} nya unika starter, ${duplicates} dubblett-/redan inlästa rader. ${unmatched.length?`Kunde inte koppla ${unmatched.length}: ${unmatched.join(', ')}. Kontrollera häst-ID, namn och avdelning.`:'Inga omatchade hästar.'}`;
  }catch(e){$("historystatus").textContent="JSON kunde inte läsas: "+e.message;}
 }
 function downloadHistoryTemplate(){const data=[{horseId:"12345",horseName:"Hästnamn",starts:[{date:"2025-05-10",country:"SE",track:"Solvalla",distance:2140,startMethod:"auto",place:2,kmTime:"1.13,4",driver:"Kusk",galloped:false,disqualified:false,scratched:false,source:"Manuell/extern källa"}]}];const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download=gameType+"-historikmall.json";a.click();URL.revokeObjectURL(a.href);}

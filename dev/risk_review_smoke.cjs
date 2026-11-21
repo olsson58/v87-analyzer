@@ -103,4 +103,48 @@ evaluate("buildBalancedSystem()");
 assert.equal(evaluate("makeForecastSnapshot().rows"), 256);
 assert.equal(evaluate("makeForecastSnapshot().costKr"), 128);
 assert.match(dom("system").innerHTML, /Exakt budget gick inte att nå/);
-console.log("Excluded-horse audit, unverified pre-race snapshot, market-data gaps and exact 300-kr V85/V75 systems OK");
+
+// Stable IDs must take precedence; an unknown/duplicate ID may never be resolved
+// just because a name looks similar. Name-only matches must be unique.
+evaluate('races[0].horses[0].horseId="ID-A"; races[0].horses[1].horseId="ID-B";');
+assert.equal(evaluate('currentHorseMatch({id:"ID-A",name:"Avd 1 häst 1"})===races[0].horses[0]'), true);
+assert.equal(evaluate('currentHorseMatch({id:"ID-Z",name:"Avd 1 häst 1"})'), null);
+assert.equal(evaluate('currentHorseMatch({id:"ID-B",name:"Avd 1 häst 1"})'), null);
+evaluate('races[1].horses[0].name="Avd 1 häst 1";');
+assert.equal(evaluate('currentHorseMatch({name:"Avd 1 häst 1"})'), null);
+assert.equal(evaluate('historyIdentityDiagnostics().ambiguousNames.length'), 1);
+assert.equal(evaluate('historyIdentityDiagnostics().withId'), 2);
+evaluate('races[1].horses[0].horseId="ID-A";');
+assert.equal(evaluate('currentHorseMatch({id:"ID-A",name:"Avd 1 häst 1"})'), null);
+assert.equal(evaluate('historyIdentityDiagnostics().duplicateIds.length'), 1);
+evaluate('races[1].horses[0].horseId=null;');
+
+// Real import counts newly deduplicated records and reports unmatched IDs.
+const importedRecord = {date: "2026-11-19", country: "SE", track: "Solvalla", place: 1, kmTime: "1.13,4", distance: 2140};
+dom("historyJSON").value = JSON.stringify([
+  {horseId: "ID-A", horseName: "Avd 1 häst 1", starts: [importedRecord, importedRecord]},
+  {horseId: "ID-Z", horseName: "Avd 1 häst 1", starts: [importedRecord]},
+]);
+evaluate("importHorseHistoryJSON()");
+assert.equal(evaluate('races[0].horses[0].history.length'), 1);
+assert.match(dom("historystatus").textContent, /1 nya unika starter, 1 dubblett/);
+assert.match(dom("historystatus").textContent, /1: Avd 1 häst 1/);
+dom("historyJSON").value = JSON.stringify([
+  {horseId: "ID-A", horseName: "Avd 1 häst 1", starts: [{...importedRecord, date:"2026-11-18"}]},
+  null,
+]);
+evaluate("importHorseHistoryJSON()");
+assert.match(dom("historystatus").textContent, /Ogiltig hästgrupp/);
+assert.equal(evaluate('races[0].horses[0].history.length'), 1, "Invalid batch must not partially import");
+evaluate("renderHistoryOverview()");
+assert.match(dom("historyoverview").innerHTML, /Hästar med stabilt ID/);
+
+// A complete imported start list with duplicate horse IDs must be rejected.
+const invalidRound = {date:"2026-11-21",races:Array.from({length:8},(_,i)=>({starts:[
+  {startNumber:1,horse:{name:`Test ${i} A`,id:i===0?"SHARED":`A${i}`}},
+  {startNumber:2,horse:{name:`Test ${i} B`,id:i===1?"SHARED":`B${i}`}},
+]}))};
+const error = evaluate(`(() => {try{importRoundJSON(${JSON.stringify(invalidRound)});return "none";}catch(e){return e.message;}})()`);
+assert.match(error, /Samma häst-ID/);
+assert.equal(evaluate('races[0].horses[0].horseId'), "ID-A", "Invalid round must not replace working horses");
+console.log("Excluded-horse audit, stable-ID matching, deduplication, no future leakage, and exact 300-kr systems OK");

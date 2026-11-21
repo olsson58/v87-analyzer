@@ -43,6 +43,16 @@ Knappen **Spara förhandsprognos (JSON)** exporterar på användarens enhet skap
 
 ## Test och status
 
+### Komplettering 3.2 – identitet och dubbletter
+
+- Vid historikimport används tillgängligt **stabilt häst-ID först**. Ett angivet men okänt eller dubblerat ID får aldrig kringgås med en liknande namnmatchning. Om startfältet saknar ID kan en dokumenterat entydig kombination av avdelning, startnummer och hästnamn användas.
+- Samma häst-ID på flera startande hästar i en hel importerad omgång leder till **avbruten import** utan att den tidigare startlistan ersätts.
+- Historiköversikten visar antal hästar med ID, dubblerade ID:n, kolliderande normaliserade namn och datumuteslutna poster. Namn som blir lika efter normalisering matchas inte globalt utan mer identitetsinformation.
+- Importstatus räknar **nya unika historikposter** separat från dubbletter och omatchade hästar. Båda grupperna kan sedan granskas och rättas i den manuellt tillåtna källfilen.
+- Exporten av tidsstämplad förhandsprognos innehåller `historyIdentity` med dessa datakvalitetsmått. Det är inga verifierade vinstprognoser eller automatiska externa hämtningar.
+
+Konfliktreglerna testas på syntetiska data, inklusive flera hästar med likartade namn, okänt ID, dubbelt ID, upprepad historikrad och avbruten import. De garanterar inte att varje extern källa har ett globalt unikt ID; sådana källor måste identifieras och namnrymder definieras innan de kombineras.
+
 ```bash
 node dev/risk_review_smoke.cjs
 node dev/calendar_smoke.cjs
