@@ -1,6 +1,6 @@
 # Datakällor – Trav Analyzer
 
-Senast manuellt granskad: 2026-11-20. Detta är en rättighets- och tekniköversikt, inte ett påstående om att automatiska anslutningar är driftsatta.
+Senast manuellt granskad: 2026-11-21. Detta är en rättighets- och tekniköversikt, inte ett påstående om att automatiska anslutningar är driftsatta.
 
 ## Spelformer efter november 2026
 
@@ -9,6 +9,7 @@ Enligt [ATG:s pressmeddelande den 17 september 2026](https://www.mynewsdesk.com/
 | Område | Källa | Läget för återanvändning |
 | --- | --- | --- |
 | Startlistor, historiska starter SE, kuskar, tränare, skor, vagn | Svensk Travsport | Publikt läsbara uppgifter men uttryckligt upphovsrätts- och databasskydd. **Ingen automatisk kopiering/återpublicering utan tillstånd.** |
+| **Officiell automatisk leverans** av svensk sportdata | **Svensk Travsport/Troperty Race Data API** | [Officiell exempelkod](https://github.com/Troperty/racedata-node-samples) och [API-simulator](https://hub.docker.com/r/troperty/customerapi-mb2-simulator) visar autentiserade händelser för startlistor, skor, vagn, strykningar och banförhållanden. **Produktionsnyckel, eventuell avgift och privat användningslicens saknas ännu.** [Implementationsplan](AUTOMATIC_STARTLISTS.md). |
 | Spelform, omgångar, streck och odds | ATG | Racinginfo är odokumenterat. [ATG:s villkor från 1 maj 2026](https://assets.ctfassets.net/hkip2osr81id/2xz0S91MO59bAzEpvDSXya/8434b4b49bd3d55fa397aa9bdc0e6db0/ATG_Allma%CC%8C_nna_Villkor_fr.o.m_1_maj_2026.pdf) förbjuder automatiserad kopiering/extraktion från webbplatsen; därför avlägsnades direktknappen. Ingen Actions-hämtning. |
 | Häststarter Norge, Finland, Danmark, Frankrike | Rikstoto, Suomen Hippos/Heppa, Dansk Hestevæddeløb, LeTrot | Intressanta offentliga söksidor för manuell källkontroll; rätt till masshämtning ej fastställd. |
 | Väderprognoser och observationer | SMHI öppna data | CC BY 4.0 SE; dokumenterade API:er, källhänvisning, uppge bearbetningar och undvik onödiga massanrop. Väder är **inte** liktydigt med banunderlag. |

@@ -5,7 +5,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from scripts.convert_excel import FormatError, convert, read_workbook
+from scripts.convert_excel import FormatError, convert, convert_sportappen_export, read_workbook
 
 
 class ExcelImportTests(unittest.TestCase):
@@ -40,6 +40,38 @@ class ExcelImportTests(unittest.TestCase):
                     game="V85", date="2026-11-21", track="Jägersro")
         with self.assertRaisesRegex(FormatError, "Ogiltigt kalenderdatum"):
             convert([], game="V85", date="2026-02-31", track="Jägersro")
+
+    def test_sportappen_multi_race_export_mapping_and_equipment(self):
+        header = ["", "Häst", "Kön", "Ålder", "Kusk/Ryttare", "Spår/Dist.",
+                  "Startsumma", "Tränare", "Ägare", "Skor", "Vagn"]
+        rows = [header]
+        for race in range(1, 13):
+            rows += [[f"Lopp {race}. Starttid 15:00"] + [""] * 10,
+                     ["", f"1  Testhäst {race}", "h", "4", "Kusk Test",
+                      "1/2140", "150 000", "Tränare Test", "Ägare Test",
+                      "Barfota runt om", "A"]]
+        result = convert_sportappen_export([("Sheet1", rows)], game="V85",
+                                          date="2026-11-21", track="Jägersro", first_race=5)
+        self.assertEqual(len(result["races"]), 8)
+        self.assertEqual(result["races"][0]["trackRaceNumber"], 5)
+        first = result["races"][0]["starts"][0]
+        self.assertEqual(first["horseName"], "Testhäst 5")
+        self.assertEqual(first["driverName"], "Kusk Test")
+        self.assertEqual(first["trainerName"], "Tränare Test")
+        self.assertEqual(first["shoes"], "Barfota runt om")
+        self.assertEqual(first["distance"], 2140)
+        self.assertNotIn("history", first)
+        self.assertNotIn("streak", first)
+
+    def test_sportappen_rejects_missing_race_and_unknown_headers(self):
+        header = ["", "Häst", "Kön", "Ålder", "Kusk/Ryttare", "Spår/Dist.",
+                  "Startsumma", "Tränare", "Ägare", "Skor", "Vagn"]
+        with self.assertRaisesRegex(FormatError, "saknar hästar"):
+            convert_sportappen_export([("Sheet1", [header, ["Lopp 5. Starttid 15:00"] + [""] * 10])],
+                                      game="V85", date="2026-11-21", track="Jägersro", first_race=5)
+        with self.assertRaisesRegex(FormatError, "andra rubriker"):
+            convert_sportappen_export([("Sheet1", [["Oväntad", "tabell"]])],
+                                      game="V85", date="2026-11-21", track="Jägersro", first_race=5)
 
     def test_read_minimal_xlsx_shared_strings(self):
         # A tiny, in-memory OOXML ZIP checks actual XLSX cell extraction.

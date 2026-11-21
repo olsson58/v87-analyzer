@@ -12,8 +12,18 @@ Mål: iPhone-vänlig analys för V75 och V85 med balanserat **ett system på hö
 - Valideringsfel avbryter arbetsflödet och ersätter inte senaste lyckade Pages-publicering.
 - Den tidigare ATG-direktknappen är borttagen: [ATG:s gällande villkor](https://assets.ctfassets.net/hkip2osr81id/2xz0S91MO59bAzEpvDSXya/8434b4b49bd3d55fa397aa9bdc0e6db0/ATG_Allma%CC%8C_nna_Villkor_fr.o.m_1_maj_2026.pdf) förbjuder automatiserad extraktion, och webbläsartestet gav "Load failed".
 - Om användaren har en startlista som får användas lokalt kan en komplett V75/V85-JSON med sju/åtta lopp och valfria historikrader importeras i **ett steg**. Gamla omgången ersätts först efter bekräftelse; ingen uppladdning till ATG sker.
-- En iPhone-guide i importpanelen visar den officiella manuella Excel-exporten från Svensk Travsports Sportapp och vägen via Filer/ChatGPT till befintlig JSON-import. **XLSX/PDF tolkas ännu inte direkt i webbläsaren**; den faktiska exportens kolumner måste kontrolleras innan en importör kan utvecklas och testas. Rätten att vidarebehandla/dela filen måste först klarläggas.
-- För lokala filer som användaren får behandla finns nu ett **försiktigt, ännu inte leverantörsverifierat** verktyg: `python scripts/convert_excel.py MINFIL.xlsx --inspect` visar rubriker utan att hämta något. Med tydliga kolumner för avdelning, startnummer och häst kan `--game V85 --date 2026-11-21 --track Jägersro --output min-omgang.json` skapa import-JSON. Om kolumner eller avdelningar saknas **stoppas importen**; banans löpnummer får aldrig gissas som V85-avdelning. Testat enbart med syntetiska Excel-data, ännu inte med Sportappens faktiska export. JSON-filen är för egen import, **inte** automatisk återpublicering.
+- En iPhone-guide i importpanelen visar den officiella manuella Excel-exporten från Svensk Travsports Sportapp och vägen via Filer/ChatGPT till befintlig JSON-import. **XLSX/PDF tolkas ännu inte direkt i webbläsaren**. Automatisk serverhämtning kräver separat åtkomst och rättighetsgodkännande.
+- För lokala filer som användaren får behandla finns `python scripts/convert_excel.py MINFIL.xlsx --inspect`. Generiska tabeller med tydlig avdelning/startnummer/häst kan omvandlas med `--game V85 --date ÅÅÅÅ-MM-DD --track Bana --output privat.json`.
+- Den manuellt exporterade **Sportappen-Excel-filen** från Jägersro 21 november 2026 har använts för att testa *formatet*, utan att lägga tävlingsdata i arkivet. Filen innehöll vanliga lopp 1–12; efter separat verifiering av omgångskopplingen kunde **V85-1–8 = vanliga lopp 5–12** omvandlas till en privat JSON med 100 hästar, kuskar, tränare, skor och vagnar. Kommandot nedan kräver uttrycklig loppmappning och avbryter vid ofullständiga lopp eller ändrat rubrikformat. Hästhistorik och streckprocent läggs inte till på gissning:
+
+  ```bash
+  python scripts/convert_excel.py 'min-sportappen-export.xlsx' \
+    --sportappen --first-race 5 --game V85 \
+    --date 2026-11-21 --track Jägersro --output privat.json
+  ```
+
+  **Obs:** `--first-race 5` avser just denna verifierade omgång, inte en permanent V85-regel. Lokal JSON är för privat import; den och källfilen ska **inte** checkas in eller återpubliceras.
+- [Plan för godkänd automatisk datainhämtning](docs/AUTOMATIC_STARTLISTS.md) beskriver Svensk Travsports officiella Race Data API, vilka tillstånd som saknas och en driftsmodell för GitHub Actions utan Safari-anrop till tredjepart.
 - Om Cloudflare Access råkar returnera en inloggningssida som HTML i stället för JSON visas ett tydligt felmeddelande.
 
 ### Lokalt kontrollera
