@@ -209,7 +209,7 @@ $("csvfile").addEventListener("change",async e=>{
 function downloadTemplate(){let a=document.createElement("a");let csv="avd;nr;häst;kusk;streck;odds;skor;vagn\n1;1;Exempelhäst;Exempelkusk;12;8,5;skor runt om;vanlig\n";a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download=gameType+"-startlista-mall.csv";a.click();URL.revokeObjectURL(a.href);}
 
 
-function nextSaturdayISO(){let d=new Date();let add=(6-d.getDay()+7)%7;if(add===0)add=7;d.setDate(d.getDate()+add);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function nextSaturdayISO(){let d=new Date();let add=(6-d.getDay()+7)%7;d.setDate(d.getDate()+add);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 $("atgdate").value=nextSaturdayISO();
 const ATG="https://www.atg.se/services/racinginfo/v1/api";
 function collectSupportedGames(calendar){
@@ -387,8 +387,17 @@ function downloadHistoryTemplate(){const data=[{horseId:"12345",horseName:"Häst
 function downloadHistoryCSV(){let rows=[["Häst-ID","Häst","Datum","Land","Bana","Distans","Startmetod","Placering","Kilometertid","Odds","Kusk","Tränare","Galopp","Diskvalificerad","Struken","Prispengar","Källa"]];races.forEach(r=>r.horses.forEach(h=>(h.history||[]).forEach(x=>rows.push([h.horseId||"",h.name,x.date,x.country,x.track,x.distance,x.startMethod,x.place,x.kmTime,x.odds,x.driver,x.trainer,x.galloped,x.disqualified,x.scratched,x.prizeMoney,x.source]))));const csv=rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(";")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download=gameType+"-hasthistorik.csv";a.click();URL.revokeObjectURL(a.href);}
 
 configureGame(preferredGameType($("atgdate").value),true);
-if(localStorage.getItem(SAVE_KEY)||localStorage.getItem("V85analyzer"))load(true);
-else{render();renderHistoryOverview();}
+const upcomingDate=$("atgdate").value;
+let savedRound=null;
+try{savedRound=JSON.parse(localStorage.getItem(SAVE_KEY)||localStorage.getItem("V85analyzer")||"null");}catch(e){}
+if(savedRound?.date===upcomingDate)load(true);
+else{
+ $("date").value=upcomingDate;
+ $("atggameid").value="";
+ render();renderHistoryOverview();
+ if(savedRound)$("topfetchstatus").textContent="Ny omgång: "+upcomingDate+". Tidigare analys finns kvar under Ladda. Hämta aktuell omgång innan spel.";
+}
+$("atgdate").addEventListener("change",()=>{$("atggameid").value="";$("atgchoices").textContent="";$("atgstatus").textContent="Datum ändrat. Hämta aktuell omgång.";});
 
 let uiBusy=false;document.addEventListener("click",async function(event){const button=event.target.closest?.("button");const action=button?.getAttribute("onclick");const actions={"startAutoFetch()":startAutoFetch,"fetchAtgCalendar()":fetchAtgCalendar,"fetchAtgGame()":fetchAtgGame,"fetchAllHorseHistory()":fetchAllHorseHistory};if(!Object.prototype.hasOwnProperty.call(actions,action))return;event.preventDefault();event.stopImmediatePropagation();if(uiBusy)return;uiBusy=true;const original=button.textContent,started=Date.now();const buttons=Array.from(document.querySelectorAll("button")).filter(b=>Object.prototype.hasOwnProperty.call(actions,b.getAttribute("onclick")));const states=buttons.map(b=>b.disabled);buttons.forEach(b=>b.disabled=true);button.setAttribute("aria-busy","true");const tick=()=>button.textContent="Arbetar… "+Math.floor((Date.now()-started)/1000)+" s";tick();const timer=setInterval(tick,1000);try{await actions[action]();}catch(e){$("topfetchstatus").textContent="Fel: "+e.message;}finally{clearInterval(timer);button.textContent=original;button.removeAttribute("aria-busy");buttons.forEach((b,i)=>b.disabled=states[i]);uiBusy=false;}},true);
 </script></body></html>
