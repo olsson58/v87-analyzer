@@ -8,15 +8,16 @@
 </style></head><body>
 <header><div><h1>🏇 Trav Analyzer</h1><div class="small" style="opacity:.8">Version 3.0 • V75 + V85 • ett balanserat system upp till 300 kr</div><div>Startlista • form • historik • spelvärde</div></div></header>
 <main id="controls"><nav class="quicknav" aria-label="Snabbnavigation"><a href="#controls">Kontroller</a><a href="#systemPanel">System</a><a href="#horseDetails">Hästar</a><a href="#riskpanel">Skrällar</a></nav>
-<div class="panel"><h2>Din omgång – ett tryck</h2><div class="row"><button onclick="startAutoFetch()">Hämta verifierad omgång</button><button class="alt" onclick="buildBalancedSystem()">Bygg balanserat system</button><button class="alt" onclick="save()">Spara analysen</button></div><p id="topfetchstatus" class="small" role="status" aria-live="polite" style="margin-top:10px">Välj datum i kontrollpanelen och hämta omgången från publicerade, kontrollerade data.</p><p class="small muted">V75/V85 och antal avdelningar kontrolleras mot omgångens data. En tillåten datakälla måste vara verifierad för att automatiken ska fungera; annars finns CSV/JSON-import som reserv. Saknad historik räknas aldrig som noll starter.</p></div>
 <section class="panel"><h2>Omgång och budget</h2><div class="row">
-<div class="field"><label>Spelform</label><select id="gameType" onchange="onGameTypeChange()"><option value="auto" selected>Automatisk (V75/V85)</option><option value="V85">V85 · 8 avdelningar</option><option value="V75">V75 · 7 avdelningar</option></select></div><div class="field"><label>Bana</label><input id="track" placeholder="Ex. Solvalla"></div><div class="field"><label>Datum</label><input id="date" type="date" onchange="render();renderHistoryOverview();save(true)"></div><div class="field"><label>Väder / banförhållande</label><input id="weather" placeholder="+2 °C, regn, tung bana"></div><div class="field"><label>Budget (kr, max 300)</label><input id="budget" type="number" value="300" min="1" max="300" onchange="enforceBudget()"></div><div class="field"><label>Strategi</label><select id="strategy"><option selected>Balanserad</option></select></div><div class="field"><label>Radpris (kr)</label><input id="unit" type="number" value="0.50" readonly aria-label="Radpris väljs automatiskt efter spelform"></div></div>
+<div class="field"><label>Spelform</label><select id="gameType" onchange="onGameTypeChange()"><option value="auto" selected>Automatisk (V75/V85)</option><option value="V85">V85 · 8 avdelningar</option><option value="V75">V75 · 7 avdelningar</option></select></div><div class="field"><label>Bana</label><input id="track" placeholder="Ex. Solvalla"></div><div class="field"><label for="date">Omgångsdatum</label><input id="date" type="date" onchange="syncRoundDate()"></div><div class="field"><label>Väder / banförhållande</label><input id="weather" placeholder="+2 °C, regn, tung bana"></div><div class="field"><label>Budget (kr, max 300)</label><input id="budget" type="number" value="300" min="1" max="300" onchange="enforceBudget()"></div><div class="field"><label>Strategi</label><select id="strategy"><option selected>Balanserad</option></select></div><div class="field"><label>Radpris (kr)</label><input id="unit" type="number" value="0.50" readonly aria-label="Radpris väljs automatiskt efter spelform"></div></div>
 <div class="row" style="margin-top:12px"><button onclick="save()">Spara</button><button class="alt" onclick="load()">Ladda</button><button class="alt" onclick="csv()">Exportera CSV</button><button class="del" onclick="resetAll()">Rensa</button></div></section>
+<div class="panel"><h2>Din omgång – ett tryck</h2><div class="row"><button onclick="startAutoFetch()">Hämta omgång och analysera</button><button class="alt" onclick="buildBalancedSystem()">Bygg balanserat system</button><button class="alt" onclick="save()">Spara analysen</button></div><p id="topfetchstatus" class="small" role="status" aria-live="polite" style="margin-top:10px">Välj datum ovan och hämta omgången från publicerade, kontrollerade data.</p><p class="small muted">V75/V85 och antal avdelningar kontrolleras mot omgångens data. En tillåten datakälla måste vara verifierad för att automatiken ska fungera; annars finns CSV/JSON-import som reserv. Saknad historik räknas aldrig som noll starter.</p></div>
+
 <section class="panel" id="liveatg">
 <h2>Startlista – verifierade data</h2>
 <p class="small muted">Safari läser verifierad kalender och startlista från samma säkrade webbplats (Cloudflare Pages eller GitHub Pages). Vi kontaktar inte ATG:s odokumenterade API: deras villkor tillåter inte automatiserad datakopiering. Riktiga omgångar publiceras först när användningsrätten är kontrollerad.</p>
 <div class="row">
-<div class="field"><label>Omgångsdatum</label><input id="atgdate" type="date"></div>
+<input id="atgdate" type="hidden">
 <div class="field"><label>Omgångs-ID (fylls efter kalendersökning)</label><input id="atggameid" placeholder="V75_... eller V85_..."></div>
 </div>
 <div class="row" style="margin-top:10px"><button onclick="startAutoFetch()">Hämta verifierad omgång</button><button class="alt" onclick="fetchAtgCalendar()">Visa publicerade omgångar</button><button class="alt" onclick="fetchAtgGame()">Hämta valt omgångs-ID</button></div>
@@ -119,6 +120,7 @@ function normHistoryRecord(x){
  const kmText=typeof km==="object"?[km.minutes,km.seconds,km.tenths].filter(v=>v!==undefined&&v!==null).join(":"):km;
  return {date:x.date||x.startDate||race.date||"",country:x.country||x.countryCode||race.countryCode||track.countryCode||track.country||"",track:typeof track==="string"?track:(track.name||x.trackName||race.trackName||""),distance:Number(x.distance||start.distance||race.distance||0)||"",startMethod:x.startMethod||race.startMethod||"",place:placeRaw===undefined?null:placeRaw,finishOrder:x.finishOrder??result.finishOrder??null,kmTime:String(kmText||""),odds:x.odds??x.finalOdds??"",driver:x.driverName||[driver.firstName,driver.lastName].filter(Boolean).join(" ")||driver.shortName||x.driver||"",trainer:x.trainerName||"",galloped:!!(x.galloped||x.result?.galloped),disqualified:!!(x.disqualified||x.result?.disqualified),scratched:!!(x.scratched||x.result?.scratched),prizeMoney:x.prizeMoney??x.result?.prizeMoney??null,source:x.source||"Importerad",raceId:x.raceId||race.id||""};
 }
+function syncRoundDate(){ $("atgdate").value=$("date").value; $("atggameid").value=""; $("atgchoices").textContent=""; $("atgstatus").textContent="Datum ändrat. Hämta omgången igen."; render();renderHistoryOverview();save(true); }
 function historyCutoff(){const date=String($("date")?.value||$("atgdate")?.value||"");return /^\d{4}-\d{2}-\d{2}$/.test(date)?date:null;}
 function eligibleHistory(h){const cutoff=historyCutoff(),records=Array.isArray(h.history)?h.history:[];return cutoff?records.filter(x=>/^\d{4}-\d{2}-\d{2}/.test(String(x.date||""))&&String(x.date).slice(0,10)<cutoff):records;}
 function excludedHistoryCount(h){return Array.isArray(h.history)?h.history.length-eligibleHistory(h).length:0;}
@@ -227,7 +229,7 @@ function load(silent=false){
   if(o.gameId){$("atggameid").value=o.gameId;window._currentGameId=o.gameId;}
   races=Array.from({length:N},(_,i)=>{const r=o.races?.[i]||{horses:[]};return {...r,horses:(r.horses||[]).map(h=>mergeCachedHistory({...h,history:Array.isArray(h.history)?h.history:[]},historyCache()))};});
   for(const k of ["track","date","weather","budget"])$(k).value=o[k]??(k==="budget"?300:"");
-  if(o.date)$("atgdate").value=o.date;
+  if(o.date){$("atgdate").value=o.date;$("date").value=o.date;}
   $("strategy").value="Balanserad";enforceBudget();window._lastUpdated=o.lastUpdated||null;
   render();renderHistoryOverview();
   if(races.every(r=>r.horses.some(h=>h.selected)))calc();
@@ -328,7 +330,7 @@ function downloadTemplate(){let a=document.createElement("a");let csv="avd;nr;h�
 
 
 function nextSaturdayISO(){let d=new Date();let add=(6-d.getDay()+7)%7;if(add===0)add=7;d.setDate(d.getDate()+add);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
-$("atgdate").value=nextSaturdayISO();
+$("atgdate").value=nextSaturdayISO(); $("date").value=$("atgdate").value;
 function collectSupportedGames(calendar){
  const found=[],seen=new Set(),types=new Set();
  const add=(obj,key="")=>{
