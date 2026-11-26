@@ -42,6 +42,24 @@ jobs:
             }
             assert.equal(await page.evaluate(()=>historyBonus({history:[]})),0);
             assert.ok(Number.isFinite(await page.evaluate(()=>score({}))));
+            // Synthetic fields only; no external racing data.
+            for (const type of ['V75','V85']) {
+              for (const amount of [100,300,950,1050]) {
+                const result=await page.evaluate(({type,amount})=>{
+                  configureGame(type,true);
+                  races=Array.from({length:N},(_,i)=>({horses:Array.from({length:10},(_,j)=>({num:j+1,name:'Synthetic '+i+'-'+j,history:[],selected:false,form:10-j}))}));
+                  document.getElementById('budget').value=String(amount);
+                  const unit=GAME_CONFIG[type].unit;
+                  const plan=suggestBalancedCounts(Math.floor((amount+1e-9)/unit));
+                  return {counts:plan.counts,rows:plan.rows,cost:plan.rows*unit};
+                },{type,amount});
+                assert.equal(result.counts.length,type==='V75'?7:8);
+                assert.ok(result.counts.every(n=>n>=1&&n<=10));
+                assert.equal(result.rows,result.counts.reduce((a,b)=>a*b,1));
+                assert.ok(result.cost<=amount+1e-8);
+              }
+            }
+
 
             assert.equal(await page.locator('#systemPanel').count(),1);
             assert.ok(await page.locator('button[onclick="startAutoFetch()"]').first().isVisible());
