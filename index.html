@@ -97,6 +97,7 @@ function mergeCachedHistory(h,cache){
 function renderRoundOverview(){
  const count=races.reduce((n,r)=>n+r.horses.length,0);
  $("roundstatus").textContent=`${gameType} · ${N} avdelningar · ${GAME_CONFIG[gameType].unit.toFixed(2).replace(".",",")} kr per rad · ${count} hästar${$("date").value?" · "+$("date").value:""}.`;
+ if(!currentRoundSafe())$("roundstatus").textContent="Ej verifierad aktuell omgång – "+(count?"sparade eller manuella uppgifter.":"startlista saknas.");
  $("roundcards").innerHTML=count?races.map((r,i)=>{const lead=rank(i)[0],has=r.horses.filter(h=>historyStats(h).count).length;return `<div><b>Avd ${i+1}</b><div class="small muted">${r.horses.length} hästar · ${has} med historik</div><div class="small">${lead?esc(lead.num)+" "+esc(lead.name):"Startlista saknas"}</div></div>`;}).join(""):"";
 }
 
@@ -122,8 +123,11 @@ function add(i){races[i].horses.push({num:races[i].horses.length+1,form:5,develo
 function set(i,j,k,v){const h=races[i]?.horses[j];if(!h)return;h[k]=v;render();renderHistoryOverview();if(races.every(r=>r.horses.some(x=>x.selected)))calc();save(true);}
 function removeH(i,j){races[i].horses.splice(j,1);render();save(true)}
 function topTwo(){races.forEach((r,i)=>{let top=rank(i).slice(0,2).map(x=>x.j);r.horses.forEach((h,j)=>h.selected=top.includes(j))});render();calc()}
-function calc(){let counts=races.map(r=>r.horses.filter(h=>h.selected).length),missing=counts.indexOf(0);if(missing>=0){$("system").innerHTML=`<p class="warn">Välj minst en häst i avdelning ${missing+1}.</p>`;return}let rows=counts.reduce((a,b)=>a*b,1),cost=rows*(GAME_CONFIG[gameType].unit),budget=enforceBudget();$("system").innerHTML=`<div class="grid"><div><label>Valda hästar per avdelning</label><b>${counts.join(" × ")}</b></div><div><label>Antal rader</label><b>${rows.toLocaleString("sv-SE")}</b></div><div><label>Beräknad kostnad</label><b>${cost.toLocaleString("sv-SE",{maximumFractionDigits:2})} kr</b></div><div><label>Budget</label><b>${budget} kr</b></div></div><p class="${cost>budget?'warn':'small muted'}">${cost>budget?'Systemet överskrider budgeten. Minska antalet hästar.':'Systemet ryms inom budgeten.'}</p><div class="grid">${races.map((r,i)=>`<div><b>Avd ${i+1}:</b> ${r.horses.filter(h=>h.selected).map(h=>esc(h.num)).join(", ")}</div>`).join("")}</div><details><summary>Visa detaljerad ranking</summary>${races.map((r,i)=>`<p><b>Avd ${i+1}:</b> ${rank(i).map(h=>`${esc(h.num)} ${esc(h.name||'Namnlös')} (${h.s.toFixed(1)}/10, preliminär rankingandel ${h.p.toFixed(0)} %, ${Number.isFinite(h.edge)?`skillnad mot streck ${h.edge>=0?"+":""}${h.edge.toFixed(1)} pp`:"streckuppgift saknas"})`).join(" · ")}</p>`).join("")}</details>`}
-function buildBalancedSystem(){
+function roundIdentityMatches(id,date){return !!date && /^V(?:75|85)[_-]/i.test(id||"") && (id||"").match(/\d{4}-\d{2}-\d{2}/)?.[0]===date;}
+function currentRoundSafe(){return roundIdentityMatches(window._currentGameId,$("atgdate").value)&&$("date").value===$("atgdate").value&&races.every(r=>r.horses.length>0);}
+function requireCurrentRound(){if(currentRoundSafe())return true;$("system").textContent="System spärrat: aktuell startlista och omgångsdatum måste kontrolleras." ;return false;}
+function calc(){if(!requireCurrentRound())return;let counts=races.map(r=>r.horses.filter(h=>h.selected).length),missing=counts.indexOf(0);if(missing>=0){$("system").innerHTML=`<p class="warn">Välj minst en häst i avdelning ${missing+1}.</p>`;return}let rows=counts.reduce((a,b)=>a*b,1),cost=rows*(GAME_CONFIG[gameType].unit),budget=enforceBudget();$("system").innerHTML=`<div class="grid"><div><label>Valda hästar per avdelning</label><b>${counts.join(" × ")}</b></div><div><label>Antal rader</label><b>${rows.toLocaleString("sv-SE")}</b></div><div><label>Beräknad kostnad</label><b>${cost.toLocaleString("sv-SE",{maximumFractionDigits:2})} kr</b></div><div><label>Budget</label><b>${budget} kr</b></div></div><p class="${cost>budget?'warn':'small muted'}">${cost>budget?'Systemet överskrider budgeten. Minska antalet hästar.':'Systemet ryms inom budgeten.'}</p><div class="grid">${races.map((r,i)=>`<div><b>Avd ${i+1}:</b> ${r.horses.filter(h=>h.selected).map(h=>esc(h.num)).join(", ")}</div>`).join("")}</div><details><summary>Visa detaljerad ranking</summary>${races.map((r,i)=>`<p><b>Avd ${i+1}:</b> ${rank(i).map(h=>`${esc(h.num)} ${esc(h.name||'Namnlös')} (${h.s.toFixed(1)}/10, preliminär rankingandel ${h.p.toFixed(0)} %, ${Number.isFinite(h.edge)?`skillnad mot streck ${h.edge>=0?"+":""}${h.edge.toFixed(1)} pp`:"streckuppgift saknas"})`).join(" · ")}</p>`).join("")}</details>`}
+function buildBalancedSystem(){if(!requireCurrentRound())return;
  const budget=enforceBudget(),unit=GAME_CONFIG[gameType].unit,maxRows=Math.floor((budget+1e-9)/unit);
  if(races.some(r=>!r.horses.length)){$("system").innerHTML='<p class="warn">Hämta startlistan först så att alla avdelningar har hästar.</p>';return;}
  races.forEach(r=>r.horses.forEach(h=>h.selected=false));
@@ -251,7 +255,7 @@ async function selectAtgGame(id){$("atggameid").value=id;window._selectedGameTyp
 async function startAutoFetch(){
  const top=$("topfetchstatus");
  if(top)top.textContent="Hämtar startlista och kontrollerar historik automatiskt…";
- try{await autoFetchGame();}catch(e){if(top)top.textContent="Hämtningen avbröts: "+e.message;return;}
+ try{const ok=await autoFetchGame();if(!ok){window._currentGameId=null;$("system").textContent="Hämtning misslyckades – inget aktuellt system.";renderRoundOverview();}}catch(e){if(top)top.textContent="Hämtningen avbröts: "+e.message;return;}
  if(top)top.textContent=$("atgstatus")?.textContent||"Hämtningen är klar. Se datastatus längre ned.";
 }
 async function autoFetchGame(){const id=await fetchAtgCalendar();if(id){$("atggameid").value=id;return await fetchAtgGame();}return false;}
@@ -262,7 +266,9 @@ async function fetchAtgGame(){
  const type=GAME_CONFIG[detected]?detected:gameType,expected=GAME_CONFIG[type].legs;
  $("atgstatus").textContent="Hämtar startlista för "+id+"…";
  try{
+  if(!roundIdentityMatches(id,$("atgdate").value))throw new Error("Omgångs-ID matchar inte valt datum.");
   const j=await getAtgJSON("/games/"+encodeURIComponent(id)),legs=extractGameRaces(j);
+  if(!roundIdentityMatches(id,$("atgdate").value))throw new Error("Datum ändrades under hämtningen.");
   if(legs.length!==expected)throw new Error("Omgången innehåller "+legs.length+" avdelningar, men "+type+" kräver "+expected+". Ingen ofullständig omgång lästes in.");
   const oldSameGame=window._currentGameId===id;
   const oldHorses=oldSameGame?new Map(races.flatMap(r=>r.horses).filter(h=>h.horseId).map(h=>[String(h.horseId),h])):new Map();
@@ -286,7 +292,7 @@ async function fetchAtgGame(){
    });
    count+=starts.length;
   });
-  if(!count)throw new Error("Inga startande hästar hittades.");
+  if(!count||newRaces.some(r=>!r.horses.length))throw new Error("Startlistan är ofullständig.");
   configureGame(type,true);races=newRaces;window._atgGame=j;window._currentGameId=id;window._selectedGameType=type;window._lastUpdated=new Date().toISOString();
   $("date").value=$("atgdate").value;$("track").value=legs[0]?.track?.name||legs[0]?.name||"";
   render();renderHistoryOverview();save(true);
@@ -390,7 +396,7 @@ configureGame(preferredGameType($("atgdate").value),true);
 const upcomingDate=$("atgdate").value;
 let savedRound=null;
 try{savedRound=JSON.parse(localStorage.getItem(SAVE_KEY)||localStorage.getItem("V85analyzer")||"null");}catch(e){}
-if(savedRound?.date===upcomingDate)load(true);
+if(savedRound?.date===upcomingDate && roundIdentityMatches(savedRound.gameId,upcomingDate))load(true);
 else{
  $("date").value=upcomingDate;
  $("atggameid").value="";
