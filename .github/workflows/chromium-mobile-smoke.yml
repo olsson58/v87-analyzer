@@ -31,6 +31,18 @@ jobs:
             await page.goto('http://127.0.0.1:8765/index.html');
             await page.locator('#controls').waitFor({state:'visible'});
             assert.equal(await page.locator('#budget').count(),1);
+            assert.equal(await page.locator('#budget').inputValue(),'300');
+            for (const amount of [100,300,850,950,1050,1500]) {
+              await page.locator('#budget').fill(String(amount));
+              assert.equal(await page.evaluate(()=>enforceBudget()),amount);
+            }
+            for (const invalid of ['', '0', '-10']) {
+              await page.locator('#budget').fill(invalid);
+              assert.equal(await page.evaluate(()=>enforceBudget()),300);
+            }
+            assert.equal(await page.evaluate(()=>historyBonus({history:[]})),0);
+            assert.ok(Number.isFinite(await page.evaluate(()=>score({}))));
+
             assert.equal(await page.locator('#systemPanel').count(),1);
             assert.ok(await page.locator('button[onclick="startAutoFetch()"]').first().isVisible());
             assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'Mobile horizontal overflow');
