@@ -82,6 +82,28 @@ jobs:
             await page.locator('#xlsxfile').setInputFiles('/tmp/trav-12.xlsx');
             await page.waitForFunction(()=>document.getElementById('importstatus').textContent.startsWith('Excel-import:'));
             assert.equal(await page.evaluate(()=>races.length),8,'Invalid import must preserve previous round');
+            // Sportinfo-style synthetic race headings and mobile selection.
+            const pending=page.evaluate(async()=>{
+              document.getElementById('gameType').value='V85';
+              const rows=[['Häst','Kusk/ryttare','Spår/dist.']];
+              for(let i=1;i<=12;i++){
+                rows.push(['Lopp '+i+'. Starttid 15:00']);
+                rows.push(['1 Synthetic '+i,'Synthetic driver','1/2140']);
+              }
+              return await sportinfoRound([rows]);
+            });
+            const dialog=page.locator('dialog[open]');
+            await dialog.waitFor();
+            assert.equal(await dialog.locator('input[type=checkbox]').count(),12);
+            const confirm=dialog.getByRole('button',{name:'Importera valda lopp'});
+            assert.equal(await confirm.isEnabled(),false);
+            for(let i=3;i<11;i++)await dialog.locator('input[type=checkbox]').nth(i).check();
+            assert.equal(await confirm.isEnabled(),true);
+            await confirm.click();
+            const selectedRound=await pending;
+            assert.equal(selectedRound.races.length,8);
+            assert.equal(selectedRound.races[0].starts[0].name,'Synthetic 4');
+            assert.equal(selectedRound.races[7].starts[0].name,'Synthetic 11');
             assert.equal(await page.locator('#systemPanel').count(),1);
             assert.ok(await page.locator('button[onclick="startAutoFetch()"]').first().isVisible());
             assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'Mobile horizontal overflow');
