@@ -40,6 +40,7 @@
 <div class="row">
 <div class="field"><label>Importera CSV från startlista</label><input id="csvfile" type="file" accept=".csv,text/csv"></div>
 <div class="field"><label>Importera JSON</label><input id="jsonfile" type="file" accept=".json,application/json"></div>
+<div class="field"><label>Importera Excel (.xlsx, med Avd-kolumn)</label><input id="xlsxfile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
 </div>
 <div class="field" style="margin-top:10px"><label>Klistra in JSON (sju eller åtta avdelningar)</label><textarea id="jsonpaste" rows="3" placeholder='Exempel: [{"avd":1,"number":1,"name":"Hästnamn","driver":"Kusk","streak":25,"shoes":"barfota"}]'></textarea></div>
 <div class="row" style="margin-top:10px"><button onclick="importJSON()">Läs in JSON</button><button class="alt" onclick="downloadTemplate()">Hämta CSV-mall</button></div>
@@ -309,6 +310,78 @@ function importJSON(){
  }catch(e){$("importstatus").textContent="Kunde inte läsa JSON: "+e.message;}
 }
 $("jsonfile").addEventListener("change",async e=>{let f=e.target.files[0];if(f){$("jsonpaste").value=await f.text();importJSON();}});
+
+async function readLocalXlsx(file){
+ if(file.size>10000000)throw Error("Excel-filen är för stor (max 10 MB).");
+ const b=await file.arrayBuffer(),v=new DataView(b),u=new Uint8Array(b),dec=new TextDecoder(),entries=new Map();
+ let end=b.byteLength-22;while(end>=Math.max(0,b.byteLength-65557)&&v.getUint32(end,true)!==0x06054b50)end--;
+ if(end<0||end< b.byteLength-65557)throw Error("Ogiltig XLSX-fil.");
+ let p=v.getUint32(end+16,true),count=v.getUint16(end+10,true);
+ if(count>2000)throw Error("För många Excel-delar.");
+ for(let i=0;i<count;i++){
+  if(v.getUint32(p,true)!==0x02014b50)throw Error("Ogiltigt Excel-arkiv.");
+  const n=v.getUint16(p+28,true),x=v.getUint16(p+30,true),c=v.getUint16(p+32,true);
+  entries.set(dec.decode(u.slice(p+46,p+46+n)),{method:v.getUint16(p+10,true),size:v.getUint32(p+20,true),raw:v.getUint32(p+24,true),offset:v.getUint32(p+42,true)});
+  p+=46+n+x+c;
+ }
+ let total=0;
+ async function xml(name){
+  const e=entries.get(name);if(!e)return null;
+  if(e.raw>12000000||(total+=e.raw)>30000000)throw Error("Excel-innehållet är för stort.");
+  const o=e.offset;if(v.getUint32(o,true)!==0x04034b50)throw Error("Ogiltig Excel-del.");
+  const start=o+30+v.getUint16(o+26,true)+v.getUint16(o+28,true);
+  let bytes=u.slice(start,start+e.size);
+  if(e.method===8){
+   const reader=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+   let chunks=[],length=0;while(true){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>e.raw||length>12000000){await reader.cancel();throw Error("För stor Excel-del.");}chunks.push(value);}
+   bytes=new Uint8Array(length);let at=0;for(const chunk of chunks){bytes.set(chunk,at);at+=chunk.length;}
+  }else if(e.method!==0)throw Error("Excel-komprimeringen stöds inte.");
+  if(bytes.length!==e.raw)throw Error("Skadad Excel-del.");
+  const doc=new DOMParser().parseFromString(dec.decode(bytes),"application/xml");if(doc.querySelector("parsererror"))throw Error("Ogiltig Excel-XML.");return doc;
+ }
+ const shared=await xml("xl/sharedStrings.xml"),strings=shared?Array.from(shared.getElementsByTagNameNS("*","si"),si=>Array.from(si.getElementsByTagNameNS("*","t"),t=>t.textContent).join("")):[];
+ const sheets=[];
+ for(const name of entries.keys()){
+  if(!/^xl\/worksheets\/sheet\d+\.xml$/.test(name))continue;
+  const doc=await xml(name),rows=[];
+  for(const row of doc.getElementsByTagNameNS("*","row")){
+   const cells=[];for(const cell of row.getElementsByTagNameNS("*","c")){
+    const ref=(cell.getAttribute("r")||"").match(/^[A-Z]+/);if(!ref)continue;
+    let col=0;for(const ch of ref[0])col=col*26+ch.charCodeAt(0)-64;if(col>256)continue;
+    const type=cell.getAttribute("t"),val=cell.getElementsByTagNameNS("*","v")[0]?.textContent||"";
+    cells[col-1]=type==="s"?strings[Number(val)]||"":type==="inlineStr"?Array.from(cell.getElementsByTagNameNS("*","t"),t=>t.textContent).join(""):val;
+   }rows.push(cells);
+  }sheets.push(rows);
+ }
+ return sheets;
+}
+function xlsxRound(sheets){
+ const norm=x=>String(x??"").trim().toLowerCase(),groups=new Map();
+ for(const rows of sheets){
+  const hi=rows.findIndex(row=>row.some(x=>["avd","avdelning","leg"].includes(norm(x)))&&row.some(x=>["häst","hästnamn","hast","name"].includes(norm(x))));
+  if(hi<0)continue;
+  const headers=rows[hi].map(norm),find=(...names)=>headers.findIndex(x=>names.includes(x));
+  const ix={leg:find("avd","avdelning","leg"),name:find("häst","hästnamn","hast","name"),number:find("nr","nummer","startnummer","number"),driverName:find("kusk","driver"),streak:find("streck","streck %","v85%","v75%"),odds:find("odds","vinnarodds"),shoes:find("skor"),cart:find("vagn")};
+  for(const row of rows.slice(hi+1)){
+   const get=k=>String(row[ix[k]]??"").trim(),name=get("name");if(!name)continue;
+   const leg=Number(get("leg")),number=Number(get("number"));
+   if(!Number.isInteger(leg)||leg<1||leg>8||!Number.isInteger(number)||number<1||number>30)throw Error("Excel-rad saknar giltig avdelning eller startnummer.");
+   if(!groups.has(leg))groups.set(leg,[]);
+   groups.get(leg).push({name,number,driverName:get("driverName"),streak:get("streak"),odds:get("odds"),shoes:get("shoes"),cart:get("cart")});
+  }
+ }
+ if(![7,8].includes(groups.size)||Array.from({length:groups.size},(_,i)=>i+1).some(i=>!groups.has(i)))throw Error("Excel måste ange exakt 7 eller 8 avdelningar i kolumnen Avd. Tävlingsdagens loppnummer är inte automatiskt spelavdelningar.");
+ for(const starts of groups.values())if(new Set(starts.map(x=>x.number)).size!==starts.length)throw Error("Dubbla startnummer i Excel.");
+ return {races:Array.from({length:groups.size},(_,i)=>({starts:groups.get(i+1)}))};
+}
+$("xlsxfile").addEventListener("change",async e=>{
+ const input=e.target,file=input.files[0];if(!file)return;
+ input.disabled=true;$("importstatus").textContent="Läser Excel lokalt…";
+ try{const parsed=xlsxRound(await readLocalXlsx(file));importRoundJSON(parsed);$("importstatus").textContent="Excel importerad. Kontrollera datum, bana och avdelningar före analys.";}
+ catch(err){$("importstatus").textContent="Excel-import: "+err.message;}
+ finally{input.disabled=false;input.value="";}
+});
+
 $("csvfile").addEventListener("change",async e=>{
  let f=e.target.files[0];if(!f)return;let lines=(await f.text()).replace(/^\uFEFF/,"").split(/\r?\n/).filter(Boolean);
  const delimiter=lines[0]?.includes(";")?";":",";
