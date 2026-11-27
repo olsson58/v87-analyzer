@@ -73,9 +73,10 @@ jobs:
               '   rows.append(f\'<row r="{j}"><c r="A{j}"><v>{i}</v></c><c r="B{j}"><v>1</v></c><c r="C{j}" t="inlineStr"><is><t>Synthetic {i}</t></is></c></row>\')',
               '  z.writestr("xl/worksheets/sheet1.xml",\'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>\'+"".join(rows)+"</sheetData></worksheet>")'
             ].join('\n')]);
+            page.on('dialog', dialog=>dialog.accept());
             for(const n of [7,8]){
               await page.locator('#xlsxfile').setInputFiles('/tmp/trav-'+n+'.xlsx');
-              await page.waitForFunction(()=>document.getElementById('importstatus').textContent.startsWith('Excel importerad'));
+              await page.waitForFunction(n=>document.getElementById('importstatus').textContent.startsWith('Excel importerad') && races.length===n,n);
               assert.equal(await page.evaluate(()=>races.length),n);
               assert.equal(await page.evaluate(()=>races[0].horses[0].name),'Synthetic 1');
             }
