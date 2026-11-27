@@ -355,7 +355,28 @@ async function readLocalXlsx(file){
  }
  return sheets;
 }
-function sportinfoRound(sheets){
+function chooseSportinfoLegs(groups,type){
+ return new Promise(resolve=>{
+  const dialog=document.createElement("dialog");dialog.style.cssText="max-width:min(92vw,480px);max-height:85vh;overflow:auto;padding:16px;border-radius:12px";
+  const title=document.createElement("h3");title.textContent="Välj "+type+"-avdelningar";dialog.append(title);
+  const info=document.createElement("p");info.textContent="Markera loppen enligt spelprogrammet. Avdelningarna ordnas efter loppnummer.";dialog.append(info);
+  const fields=[];
+  for(const [n,g] of [...groups].sort((a,b)=>a[0]-b[0])){
+   const label=document.createElement("label");label.style.cssText="display:flex;align-items:center;gap:8px;padding:8px";
+   const input=document.createElement("input");input.type="checkbox";input.value=String(n);input.style.width="auto";fields.push(input);
+   label.append(input,document.createTextNode("Lopp "+n+" · "+g.time+" · "+g.starts.length+" hästar"));dialog.append(label);
+  }
+  const count=document.createElement("p"),ok=document.createElement("button"),cancel=document.createElement("button"),need=type==="V75"?7:8;
+  ok.type=cancel.type="button";ok.textContent="Importera valda lopp";cancel.textContent="Avbryt";
+  const chosen=()=>fields.filter(f=>f.checked).map(f=>Number(f.value));
+  const refresh=()=>{count.textContent=chosen().length+" av "+need+" valda";ok.disabled=chosen().length!==need;};
+  fields.forEach(f=>f.addEventListener("change",refresh));refresh();
+  let result=null;ok.onclick=()=>{result=chosen();dialog.close();};cancel.onclick=()=>dialog.close();
+  dialog.append(count,ok,cancel);dialog.addEventListener("close",()=>{dialog.remove();resolve(result);},{once:true});
+  document.body.append(dialog);dialog.showModal();
+ });
+}
+async function sportinfoRound(sheets){
  const norm=x=>String(x??"").trim().toLowerCase();
  for(const rows of sheets){
   const hi=rows.findIndex(row=>row.some(x=>norm(x)==="kusk/ryttare")&&row.some(x=>norm(x)==="spår/dist."));
@@ -370,10 +391,8 @@ function sportinfoRound(sheets){
    groups.get(current).starts.push({number:Number(m[1]),name:m[2],driverName:get("kusk/ryttare"),shoes:get("skor"),cart:get("vagn"),notes:["Tränare: "+get("tränare"),"Startsumma: "+get("startsumma"),"Spår/distans: "+get("spår/dist.")].join(" · ")});
   }
   const type=$("gameType").value;
-  const selected=prompt("Sportinfo innehåller "+groups.size+" lopp. Ange spelavdelningarnas loppnummer i ordning, separerade med komma. Kontrollera mot spelprogrammet.\n"+Array.from(groups,([n,g])=>n+": "+g.time+" ("+g.starts.length+" hästar)").join("\n"),"");
-  if(selected===null)throw Error("Import avbruten.");
-  const ids=selected.split(",").map(x=>Number(x.trim()));
-  if(![7,8].includes(ids.length)||new Set(ids).size!==ids.length||ids.some(n=>!groups.has(n))||(type==="V75"&&ids.length!==7)||(type==="V85"&&ids.length!==8))throw Error("Välj 7 eller 8 unika lopp som matchar spelformen.");
+  const ids=await chooseSportinfoLegs(groups,type);
+  if(ids===null)throw Error("Import avbruten.");
   return {races:ids.map(n=>({name:"Lopp "+n,starts:groups.get(n).starts}))};
  }
  return null;
@@ -400,7 +419,7 @@ function xlsxRound(sheets){
 $("xlsxfile").addEventListener("change",async e=>{
  const input=e.target,file=input.files[0];if(!file)return;
  input.disabled=true;$("importstatus").textContent="Läser Excel lokalt…";
- try{const sheets=await readLocalXlsx(file);const parsed=sportinfoRound(sheets)||xlsxRound(sheets);importRoundJSON(parsed);$("importstatus").textContent="Excel importerad. Kontrollera datum, bana och avdelningar före analys.";}
+ try{const sheets=await readLocalXlsx(file);const parsed=(await sportinfoRound(sheets))||xlsxRound(sheets);importRoundJSON(parsed);$("importstatus").textContent="Excel importerad. Kontrollera datum, bana och avdelningar före analys.";}
  catch(err){$("importstatus").textContent="Excel-import: "+err.message;}
  finally{input.disabled=false;input.value="";}
 });
