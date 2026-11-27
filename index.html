@@ -275,7 +275,7 @@ function importRoundJSON(parsed){
   if(id&&importedIds.has(id))throw new Error("Samma häst-ID förekommer flera gånger i omgången: "+id+". Kontrollera startlistan innan import.");
   if(id)importedIds.add(id);
  }
- if(races.some(r=>r.horses.length)&&!confirm("Ersätta den öppna omgången med den importerade startlistan? Sparad hästhistorik behålls."))return true;
+ if(races.some(r=>r.horses.length)&&!confirm("Ersätta den öppna omgången med den importerade startlistan? Sparad hästhistorik behålls."))return false;
  configureGame(type,true);
  races=nextRaces;window._atgGame=parsed;window._localImport=true;window._experimentalAtg=false;
  window._currentGameId=null;window._selectedGameType=type;
@@ -419,7 +419,7 @@ function xlsxRound(sheets){
 $("xlsxfile").addEventListener("change",async e=>{
  const input=e.target,file=input.files[0];if(!file)return;
  input.disabled=true;$("importstatus").textContent="Läser Excel lokalt…";
- try{const sheets=await readLocalXlsx(file);const parsed=(await sportinfoRound(sheets))||xlsxRound(sheets);importRoundJSON(parsed);$("importstatus").textContent="Excel importerad. Kontrollera datum, bana och avdelningar före analys.";}
+ try{const sheets=await readLocalXlsx(file);const parsed=(await sportinfoRound(sheets))||xlsxRound(sheets);if(!importRoundJSON(parsed)){$("importstatus").textContent="Excel-import: Avbruten.";return;}$("importstatus").textContent="Excel importerad. Kontrollera datum, bana och avdelningar före analys.";}
  catch(err){$("importstatus").textContent="Excel-import: "+err.message;}
  finally{input.disabled=false;input.value="";}
 });
