@@ -61,6 +61,27 @@ jobs:
             }
 
 
+            // Generate real XLSX fixtures locally, with no external racing data.
+            const {execFileSync}=await import('node:child_process');
+            execFileSync('python3',['-c',[
+              'import zipfile',
+              'for n in (7,8,12):',
+              ' with zipfile.ZipFile(f"/tmp/trav-{n}.xlsx","w",zipfile.ZIP_DEFLATED) as z:',
+              '  rows=[\'<row r="1"><c r="A1" t="inlineStr"><is><t>Avd</t></is></c><c r="B1" t="inlineStr"><is><t>Nr</t></is></c><c r="C1" t="inlineStr"><is><t>Häst</t></is></c></row>\']',
+              '  for i in range(1,n+1):',
+              '   j=i+1',
+              '   rows.append(f\'<row r="{j}"><c r="A{j}"><v>{i}</v></c><c r="B{j}"><v>1</v></c><c r="C{j}" t="inlineStr"><is><t>Synthetic {i}</t></is></c></row>\')',
+              '  z.writestr("xl/worksheets/sheet1.xml",\'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>\'+"".join(rows)+"</sheetData></worksheet>")'
+            ].join('\n')]);
+            for(const n of [7,8]){
+              await page.locator('#xlsxfile').setInputFiles('/tmp/trav-'+n+'.xlsx');
+              await page.waitForFunction(()=>document.getElementById('importstatus').textContent.startsWith('Excel importerad'));
+              assert.equal(await page.evaluate(()=>races.length),n);
+              assert.equal(await page.evaluate(()=>races[0].horses[0].name),'Synthetic 1');
+            }
+            await page.locator('#xlsxfile').setInputFiles('/tmp/trav-12.xlsx');
+            await page.waitForFunction(()=>document.getElementById('importstatus').textContent.startsWith('Excel-import:'));
+            assert.equal(await page.evaluate(()=>races.length),8,'Invalid import must preserve previous round');
             assert.equal(await page.locator('#systemPanel').count(),1);
             assert.ok(await page.locator('button[onclick="startAutoFetch()"]').first().isVisible());
             assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'Mobile horizontal overflow');
