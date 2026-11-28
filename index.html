@@ -678,7 +678,7 @@ function importHorseHistoryJSON(){
    mergeHorseHistory(target,starts,!!g.hasMoreRecords,g.source||"Egen komplettering");
    const unique=Math.max(0,target.history.length-before);added+=unique;duplicates+=Math.max(0,starts.length-unique);
   });
-  render();renderHistoryOverview();save(true);$("historystatus").textContent=`Historikimport: ${matchedGroups}/${groups.length} hästar matchade (${matchedById} med angivet ID), ${added} nya unika starter, ${duplicates} dubblett-/redan inlästa rader. ${unmatched.length?`Kunde inte koppla ${unmatched.length}: ${unmatched.join(', ')}. Kontrollera häst-ID, namn och avdelning.`:'Inga omatchade hästar.'}`;
+  render();renderHistoryOverview();if(races.every(r=>r.horses.some(h=>h.selected)))calc();save(true);$("historystatus").textContent=`Historikimport: ${matchedGroups}/${groups.length} hästar matchade (${matchedById} med angivet ID), ${added} nya unika starter, ${duplicates} dubblett-/redan inlästa rader. ${unmatched.length?`Kunde inte koppla ${unmatched.length}: ${unmatched.join(', ')}. Kontrollera häst-ID, namn och avdelning.`:'Inga omatchade hästar.'}`;
  }catch(e){$("historystatus").textContent="JSON kunde inte läsas: "+e.message;}
 }
 function downloadHistoryTemplate(){const data=[{horseId:"12345",horseName:"Hästnamn",starts:[{date:"2025-05-10",country:"SE",track:"Solvalla",distance:2140,startMethod:"auto",place:2,kmTime:"1.13,4",driver:"Kusk",galloped:false,disqualified:false,scratched:false,source:"Manuell/extern källa"}]}];const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download=gameType+"-historikmall.json";a.click();URL.revokeObjectURL(a.href);}
